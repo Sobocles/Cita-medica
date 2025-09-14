@@ -1,18 +1,382 @@
-.cursor {
-    cursor: pointer;
+// Variables
+$primary-color: #3336ff;
+$danger-color: #ff4444;
+$success-color: #00C851;
+$warning-color: #ffbb33;
+$info-color: #33b5e5;
+$dark-color: #2e2e2e;
+$light-bg: #f8f9fa;
+$card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+$hover-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+$transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+// Animaciones
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
+// Contenedor principal
+.animated {
+  &.fadeIn {
+    animation: fadeIn 0.5s ease-out;
+  }
+}
 
-table {
-    width: 100%;
-    table-layout: fixed;
+// Card principal
+.card {
+  border: none;
+  border-radius: 16px;
+  box-shadow: $card-shadow;
+  transition: $transition;
+  background: white;
+  overflow: hidden;
+  
+  &:hover {
+    box-shadow: $hover-shadow;
+    transform: translateY(-2px);
   }
   
+  .card-body {
+    padding: 2rem;
+  }
+  
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $dark-color;
+    margin-bottom: 0.5rem;
+  }
+  
+  .card-subtitle {
+    font-size: 0.95rem;
+    color: #6c757d;
+    font-weight: 400;
+  }
+}
 
-  table th,
-  table td {
+// Buscador
+p {
+  font-weight: bold;
+  color: $primary-color;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  
+  &::before {
+    content: "🔍 ";
+    margin-right: 0.5rem;
+  }
+}
+
+.form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  transition: $transition;
+  background-color: $light-bg;
+  
+  &:focus {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 0.2rem rgba(51, 54, 255, 0.15);
+    background-color: white;
+    outline: none;
+  }
+  
+  &::placeholder {
+    color: #adb5bd;
+  }
+}
+
+// Tabla mejorada
+.table-responsive {
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 1.5rem;
+}
+
+.table {
+  width: 100%;
+  table-layout: fixed;
+  margin-bottom: 0;
+  border-collapse: separate;
+  border-spacing: 0;
+  
+  thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    
+    tr {
+      th {
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 1.25rem 1rem;
+        border: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        
+        &:first-child {
+          border-top-left-radius: 12px;
+        }
+        
+        &:last-child {
+          border-top-right-radius: 12px;
+        }
+      }
+    }
+  }
+  
+  tbody {
+    tr {
+      transition: $transition;
+      border-bottom: 1px solid #f1f3f5;
+      position: relative;
+      
+      &:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        transform: scale(1.01);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      }
+      
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 0;
+        height: 2px;
+        background: linear-gradient(to right, $primary-color, #764ba2);
+        transition: width 0.3s ease;
+      }
+      
+      &:hover::after {
+        width: 100%;
+      }
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      td {
+        padding: 1.25rem 1rem;
+        vertical-align: middle;
+        color: $dark-color;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border: none;
+        
+        &:first-child {
+          font-weight: 600;
+          color: $primary-color;
+        }
+      }
+    }
+  }
+}
+
+// Contenedor de iconos
+.icon-container {
+  display: inline-block;
+  margin-right: 12px;
+  
+  &:last-child {
+    margin-right: 0;
+  }
+  
+  .cursor {
+    cursor: pointer;
+    transition: $transition;
+    padding: 8px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+      transform: scale(1.2);
+    }
+    
+    i {
+      font-size: 1.1rem;
+    }
+  }
+  
+  // Icono de eliminar
+  &.icon-delete {
+    .cursor {
+      &:hover {
+        background-color: rgba($danger-color, 0.1);
+        
+        i {
+          filter: drop-shadow(0 2px 4px rgba(255, 68, 68, 0.3));
+        }
+      }
+    }
+    
+    i.text-danger {
+      color: $danger-color;
+    }
+  }
+  
+  // Icono de imprimir
+  &.icon-print {
+    .cursor {
+      &:hover {
+        background-color: rgba($info-color, 0.1);
+        
+        i {
+          color: $info-color;
+          filter: drop-shadow(0 2px 4px rgba(51, 181, 229, 0.3));
+        }
+      }
+    }
+    
+    i.fa-print {
+      color: #6c757d;
+      transition: $transition;
+    }
+  }
+}
+
+// Badge para total
+.total-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+// Paginador personalizado
+app-paginator {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+// Utilidades
+.cursor {
+  cursor: pointer;
+}
+
+// Estados de carga
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+// Tooltips
+[data-toggle="tooltip"] {
+  position: relative;
+  
+  &:hover::before {
+    content: attr(data-original-title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    z-index: 1000;
+  }
+}
+
+// Responsive
+@media (max-width: 992px) {
+  .table {
+    font-size: 0.85rem;
+    
+    thead th {
+      padding: 1rem 0.5rem;
+      font-size: 0.8rem;
+    }
+    
+    tbody td {
+      padding: 1rem 0.5rem;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1.25rem;
   }
   
+  .table {
+    font-size: 0.75rem;
+    
+    thead th {
+      padding: 0.75rem 0.25rem;
+      font-size: 0.7rem;
+      letter-spacing: 0;
+    }
+    
+    tbody td {
+      padding: 0.75rem 0.25rem;
+    }
+  }
+  
+  .icon-container {
+    margin-right: 6px;
+    
+    .cursor {
+      padding: 4px;
+      
+      i {
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+// Efectos adicionales
+.table-bordered {
+  border: none;
+  
+  tbody {
+    tr {
+      &:hover {
+        position: relative;
+        z-index: 1;
+      }
+    }
+  }
+}
+
+// Animación de entrada para filas
+tbody tr {
+  animation: fadeIn 0.3s ease-out;
+  animation-fill-mode: both;
+  
+  @for $i from 1 through 10 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{$i * 0.05}s;
+    }
+  }
+}
+
+// Mejoras de accesibilidad
+.btn:focus,
+.form-control:focus {
+  outline: 2px solid $primary-color;
+  outline-offset: 2px;
+}

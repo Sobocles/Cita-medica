@@ -1,105 +1,115 @@
+<!-- Sección de búsqueda -->
 <div class="row animated fadeIn fast">
   <div class="col-12">
-      <div class="card shadow-sm">
-          <div class="card-body">
-            <div class="mb-3">
-              <label for="searchPatient" class="form-label fw-bold text-primary">Buscar pacientes por nombre</label>
-              <div class="input-group">
-                <span class="input-group-text bg-light">
-                  <i class="fa fa-search"></i>
-                </span>
-                <input type="text"
-                       id="searchPatient"
-                       class="form-control"
-                       placeholder="Ingrese nombre del paciente..."
-                       #txtTermino
-                       (keyup)="buscar(txtTermino.value)"/>
-              </div>
-            </div>
-          </div>
+    <div class="card">
+      <div class="card-body">
+        <label for="searchPatient" class="form-label">Buscar pacientes...</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="fa fa-search"></i>
+          </span>
+          <input type="text"
+                 id="searchPatient"
+                 class="form-control"
+                 placeholder="Buscar pacientes por nombre..."
+                 #txtTermino
+                 (keyup)="buscar(txtTermino.value)"/>
+        </div>
       </div>
+    </div>
   </div>
 </div>
 
-<div class="row mt-3">
+<!-- Tabla principal con botón agregar integrado -->
+<div class="row animated fadeIn fast mt-3">
   <div class="col-12">
-      <div class="card shadow-sm">
-          <div class="card-header bg-light">
-              <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                      <h4 class="card-title mb-0">Pacientes: <span class="badge bg-primary">{{ totalUsuarios }}</span></h4>
-                      <p class="text-muted small mb-0">Pacientes registrados en el sistema</p>
-                  </div>
-                  <a class="btn btn-primary" routerLink="/agregar-paciente">
-                      <i class="fa fa-plus-circle me-1"></i> Crear Paciente
-                  </a>
-              </div>
+    <div class="card">
+      <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h4 class="card-title">
+              Total de pacientes
+              <span class="total-badge">{{totalUsuarios}}</span>
+            </h4>
+            <h6 class="card-subtitle text-muted">Total de pacientes registrados en mi aplicación</h6>
           </div>
-          <div class="card-body p-0">
-              <div class="table-responsive">
-                <table class="table table-hover table-striped mb-0">
-                  <thead class="bg-light text-dark">
-                    <tr>
-                      <th class="px-3 py-3" style="width: 15%;">RUT</th>
-                      <th class="px-3 py-3" style="width: 10%;">Nombre</th>
-                      <th class="px-3 py-3" style="width: 15%;">Apellidos</th>
-                      <th class="px-3 py-3" style="width: 15%;">Email</th>
-                      <th class="px-3 py-3" style="width: 15%;">Teléfono</th>
-                      <th class="px-3 py-3" style="width: 15%;">Rol</th>
-                      <th class="px-3 py-3 text-center" style="width: 10%;">Acciones</th>
-                    </tr>
-                  </thead>
-                  
-                  <tbody>
-                    <tr *ngFor="let paciente of pacientes">
-                      <td class="px-3 py-2 align-middle">{{ paciente.rut }}</td>
-                      <td class="px-3 py-2 align-middle text-capitalize">{{ paciente.nombre }}</td>
-                      <td class="px-3 py-2 align-middle text-capitalize">{{ paciente.apellidos }}</td>
-                      <td class="px-3 py-2 align-middle">{{ paciente.email }}</td>
-                      <td class="px-3 py-2 align-middle">{{ paciente.telefono }}</td>
-                      <td class="px-3 py-2 align-middle">
-                          <select class="form-select form-select-sm"
-                                 [(ngModel)]="paciente.rol"
-                                 (change)="cambiarRole(paciente)">
-                            <option value="ADMIN_ROLE">Administrador</option>
-                            <option value="USER_ROLE">Usuario</option>
-                          </select>
-                      </td>
-                      <td class="px-3 py-2 align-middle text-center">
-                        <div class="btn-group" role="group">
-                          <button type="button" class="btn btn-outline-primary btn-sm" 
-                                  data-toggle="tooltip" title="Editar" 
-                                  (click)="editarUsuario(paciente)">
-                            <i class="fa fa-pencil"></i>
-                          </button>
-                          <button type="button" class="btn btn-outline-danger btn-sm" 
-                                  data-toggle="tooltip" title="Eliminar" 
-                                  (click)="borrarPaciente(paciente)">
-                            <i class="fa fa-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr *ngIf="pacientes.length === 0">
-                      <td colspan="7" class="text-center py-4">
-                        <div class="text-muted">
-                          <i class="fa fa-info-circle me-1"></i> No se encontraron pacientes
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              
-              <div class="p-3" *ngIf="txtTermino.value.length === 0">
-                <app-paginator 
-                  [totalItems]="totalUsuarios" 
-                  [(offset)]="desde" 
-                  [pageSize]="5"
-                  (offsetChange)="cambiarPagina($event)">
-                </app-paginator>
-              </div>
-          </div>
+          <a routerLink="/agregar-paciente" class="btn btn-primary">
+            <i class="fa fa-plus-circle"></i>
+            Agregar Paciente
+          </a>
+        </div>
       </div>
+      
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th style="width: 15%;">RUT</th>
+                <th style="width: 15%;">Nombre</th>
+                <th style="width: 15%;">Apellidos</th>
+                <th style="width: 20%;">Email</th>
+                <th style="width: 15%;">Teléfono</th>
+                <th style="width: 10%;">Rol</th>
+                <th style="width: 10%;" class="text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let paciente of pacientes">
+                <td>{{paciente.rut}}</td>
+                <td class="text-capitalize">{{paciente.nombre}}</td>
+                <td class="text-capitalize">{{paciente.apellidos}}</td>
+                <td>{{paciente.email}}</td>
+                <td>{{paciente.telefono}}</td>
+                <td>
+                  <select class="form-select form-select-sm"
+                          [(ngModel)]="paciente.rol"
+                          (change)="cambiarRole(paciente)">
+                    <option value="ADMIN_ROLE">Administrador</option>
+                    <option value="USER_ROLE">Usuario</option>
+                  </select>
+                </td>
+                <td class="text-center">
+                  <div class="btn-group">
+                    <button type="button" 
+                            class="btn btn-outline-primary btn-sm"
+                            data-toggle="tooltip"
+                            title="Editar"
+                            (click)="editarUsuario(paciente)">
+                      <i class="fa fa-pencil"></i>
+                    </button>
+                    <button type="button"
+                            class="btn btn-outline-danger btn-sm"
+                            data-toggle="tooltip"
+                            title="Eliminar"
+                            (click)="borrarPaciente(paciente)">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="pacientes.length === 0">
+                <td colspan="7" class="text-center py-4">
+                  <div class="text-muted">
+                    <i class="fa fa-info-circle"></i>
+                    No se encontraron pacientes
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Paginador -->
+        <div class="p-3" *ngIf="txtTermino.value.length === 0">
+          <app-paginator
+            [totalItems]="totalUsuarios"
+            [(offset)]="desde"
+            [pageSize]="5"
+            (offsetChange)="cambiarPagina($event)">
+          </app-paginator>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

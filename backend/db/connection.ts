@@ -1,10 +1,15 @@
 import { Sequelize } from 'sequelize';
 
-const db = new Sequelize('gestor', 'root', 'puppetmaster', { 
-    host: 'localhost',
+const db = new Sequelize(
+  process.env.DB_NAME || 'gestor',
+  process.env.DB_USER || 'root', 
+  process.env.DB_PASSWORD || 'puppetmaster',
+  {
+    host: process.env.DB_HOST || 'localhost',
     dialect: 'mysql',
-    port: 3306
-});
+    port: parseInt(process.env.DB_PORT || '3306')
+  }
+);
 
 
 

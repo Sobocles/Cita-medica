@@ -4,7 +4,7 @@ export interface tipoCitaResponse {
   }
   
   export interface Tipo_cita {
-    idTipo: number;
+    idTipoCita: number;  
     tipo_cita: string;
     precio: number;
     especialidad_medica: string;

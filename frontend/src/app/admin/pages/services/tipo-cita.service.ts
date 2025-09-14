@@ -47,6 +47,11 @@ export class TipoCitaService {
     return this.http.delete( url, this.headers );
   }
 
+  cargaTodasEspecialidades() {
+    const url = `${base_url}/tipo_cita/especialidades/all`;
+    return this.http.get<any>(url, this.headers);
+}
+
   cargaEspecialidades( ) {
     const url = `${ base_url }/tipo_cita/especialidades`;
     return this.http.get<any>( url, this.headers)   
@@ -61,7 +66,7 @@ export class TipoCitaService {
   
   editarTipoCita(TipoCita: any): Observable<any> {
     console.log('AQUI ESTA EL ID TIPO CITA',TipoCita.idTipo);
-    return this.http.put(`${ base_url }/tipo_cita/${TipoCita.idTipo}`, TipoCita, this.headers);
+    return this.http.put(`${base_url}/tipo_cita/${TipoCita.idTipoCita}`, TipoCita, this.headers);
   }
   
 

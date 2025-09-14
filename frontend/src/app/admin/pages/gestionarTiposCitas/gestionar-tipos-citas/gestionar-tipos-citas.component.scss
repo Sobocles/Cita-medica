@@ -1,21 +1,316 @@
-.cursor {
-    cursor: pointer;
+// Variables
+$primary-color: #3336ff;
+$danger-color: #ff4444;
+$success-color: #00C851;
+$warning-color: #ffbb33;
+$dark-color: #2e2e2e;
+$light-bg: #f8f9fa;
+$card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+$hover-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+$transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+// Animaciones
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.icon-container {
-    display: inline-block;
-    margin-right: 10px;  /* Esto añade un pequeño espacio entre los íconos */
+// Contenedor principal
+.animated {
+  &.fadeIn {
+    animation: fadeIn 0.5s ease-out;
+  }
+}
+
+// Card principal
+.card {
+  border: none;
+  border-radius: 16px;
+  box-shadow: $card-shadow;
+  transition: $transition;
+  background: white;
+  overflow: hidden;
+  
+  &:hover {
+    box-shadow: $hover-shadow;
+    transform: translateY(-2px);
+  }
+  
+  .card-body {
+    padding: 2rem;
+  }
+  
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: $dark-color;
+    margin-bottom: 0.5rem;
+  }
+  
+  .card-subtitle {
+    font-size: 0.95rem;
+    color: #6c757d;
+    font-weight: 400;
+  }
+}
+
+// Buscador
+.form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  transition: $transition;
+  background-color: $light-bg;
+  
+  &:focus {
+    border-color: $primary-color;
+    box-shadow: 0 0 0 0.2rem rgba(51, 54, 255, 0.15);
+    background-color: white;
+    outline: none;
+  }
+  
+  &::placeholder {
+    color: #adb5bd;
+  }
+}
+
+// Botón agregar
+.btn-primary {
+  background: linear-gradient(135deg, $primary-color 0%, lighten($primary-color, 10%) 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(51, 54, 255, 0.3);
+  transition: $transition;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(51, 54, 255, 0.4);
+    background: linear-gradient(135deg, darken($primary-color, 5%) 0%, $primary-color 100%);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Tabla mejorada
+.table-responsive {
+  border-radius: 12px;
+  overflow: hidden;
+  margin-top: 1.5rem;
 }
 
 .table {
-    width: 100%;
-    table-layout: fixed; /* Forza anchos fijos en las columnas */
+  width: 100%;
+  table-layout: fixed;
+  margin-bottom: 0;
+  
+  thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    
+    tr {
+      th {
+        color: white;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 1.25rem 1rem;
+        border: none;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        
+        &:first-child {
+          border-top-left-radius: 12px;
+        }
+        
+        &:last-child {
+          border-top-right-radius: 12px;
+        }
+      }
+    }
   }
   
-  .table th,
-  .table td {
-    white-space: nowrap;       /* Evita que el texto se divida en varias líneas */
-    overflow: hidden;          /* Oculta el contenido que se desborda */
-    text-overflow: ellipsis;   /* Muestra "..." si el contenido es muy largo */
+  tbody {
+    tr {
+      transition: $transition;
+      border-bottom: 1px solid #f1f3f5;
+      
+      &:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+        transform: scale(1.01);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      }
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      td {
+        padding: 1.25rem 1rem;
+        vertical-align: middle;
+        color: $dark-color;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border: none;
+        
+        &:first-child {
+          font-weight: 600;
+          color: $primary-color;
+        }
+      }
+    }
+  }
+}
+
+// Contenedor de íconos
+.icon-container {
+  display: inline-block;
+  margin-right: 12px;
+  
+  .cursor {
+    cursor: pointer;
+    transition: $transition;
+    padding: 8px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+      transform: scale(1.2);
+    }
+    
+    i {
+      font-size: 1.1rem;
+      
+      &.text-danger {
+        color: $danger-color;
+        
+        &:hover {
+          color: darken($danger-color, 10%);
+          filter: drop-shadow(0 2px 4px rgba(255, 68, 68, 0.3));
+        }
+      }
+      
+      &.text-primary {
+        color: $primary-color;
+        
+        &:hover {
+          color: darken($primary-color, 10%);
+          filter: drop-shadow(0 2px 4px rgba(51, 54, 255, 0.3));
+        }
+      }
+    }
+  }
+}
+
+// Estilos para el texto de búsqueda
+p {
+  font-weight: bold;
+  color: $primary-color;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  
+  &::before {
+    content: "🔍 ";
+    margin-right: 0.5rem;
+  }
+}
+
+// Contenedor fluido
+.container-fluid {
+  padding: 1.5rem 0;
+  
+  .row {
+    align-items: center;
+  }
+}
+
+// Paginador personalizado
+app-paginator {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+// Estados de carga
+.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .card-body {
+    padding: 1.25rem;
   }
   
+  .table {
+    font-size: 0.85rem;
+    
+    thead th {
+      padding: 1rem 0.5rem;
+      font-size: 0.8rem;
+    }
+    
+    tbody td {
+      padding: 1rem 0.5rem;
+    }
+  }
+  
+  .icon-container {
+    margin-right: 8px;
+  }
+}
+
+// Efectos adicionales
+.table-bordered {
+  border: none;
+  
+  tbody {
+    tr {
+      position: relative;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        width: 0;
+        height: 2px;
+        background: linear-gradient(to right, $primary-color, #764ba2);
+        transition: width 0.3s ease;
+      }
+      
+      &:hover::after {
+        width: 100%;
+      }
+    }
+  }
+}
+
+// Badge para total
+.total-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}

@@ -19,7 +19,7 @@ export async function initializeData() {
     // 2. Inicializar usuario admin por defecto (si no existe)
     await initializeAdminUser();
 
-    await migrateMedicosTable();
+     await migrateMedicosTable();
     
     console.log('Datos básicos inicializados correctamente');
   } catch (error) {
@@ -31,22 +31,26 @@ export async function initializeData() {
 /**
  * Inicializa los roles básicos del sistema
  */
+/**
+ * Inicializa los roles básicos del sistema
+ * ORDEN CORREGIDO para coincidir con la base de datos actual
+ */
 async function initializeRoles() {
-  // Definir roles básicos
+  // ✅ ORDEN CORREGIDO: Debe coincidir con el orden de inserción en la migración
   const basicRoles = [
     {
       nombre: 'Administrador',
-      codigo: UserRole.ADMIN,
+      codigo: UserRole.ADMIN,      // 1. ADMIN_ROLE (id: 1)
       descripcion: 'Acceso completo a todas las funciones del sistema'
     },
     {
       nombre: 'Médico',
-      codigo: UserRole.MEDICO,
+      codigo: UserRole.MEDICO,     // 2. MEDICO_ROLE (id: 2) ✅
       descripcion: 'Acceso a funciones de gestión médica'
     },
     {
       nombre: 'Usuario',
-      codigo: UserRole.USER,
+      codigo: UserRole.USER,       // 3. USER_ROLE (id: 3) ✅
       descripcion: 'Acceso básico para pacientes'
     }
   ];
@@ -60,6 +64,7 @@ async function initializeRoles() {
     }
   }
 }
+
 
 /**
  * Inicializa el usuario administrador por defecto

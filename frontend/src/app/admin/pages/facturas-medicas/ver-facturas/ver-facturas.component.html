@@ -1,116 +1,93 @@
-
-
-<div class="row animated fadeIn fast"
->
+<!-- Sección de búsqueda -->
+<div class="row animated fadeIn fast">
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-
-
-              <p style="font-weight: bold; color: #3336ff;">Busca facturas por nombre paciente</p>
+                <p>Buscar facturas...</p>
                 <input type="text"
-                        class="form-control"
-                        placeholder="Buscar facturas..."
-                        #txtTermino
-                        (keyup)="buscar( txtTermino.value )">
-
+                       class="form-control"
+                       placeholder="Buscar facturas por nombre del paciente..."
+                       #txtTermino
+                       (keyup)="buscar(txtTermino.value)">
             </div>
         </div>
     </div>
-</div> 
+</div>
 
-
-
-
-<div class="row" 
->
+<!-- Tabla principal -->
+<div class="row animated fadeIn fast mt-3">
     <div class="col-12">
         <div class="card">
-            <div class="card-body">      
+            <div class="card-body">
+                <h4 class="card-title">
+                    Total de facturas
+                    <span class="total-badge">{{totalFacturas}}</span>
+                </h4>
+                <h6 class="card-subtitle">Facturas registradas en mi aplicación</h6>
                 
-                <div class="row">
-                    <div class="col-8">
-                        <h4 class="card-title">total de facturas </h4>
-                        <h6 class="card-subtitle">
-                            facturas registrados en mi aplicación
-                        </h6>
-                    </div>
-                  
-              
-
-                </div>
-
                 <div class="table-responsive">
                     <table class="table table-bordered">
-                      <thead>
-                        <tr>
-                          <th style="width: 3%;">ID</th>
-                          <th style="width: 8%;">Rut paciente</th>
-                          <th style="width: 13%;">Nombre paciente</th>
-                          <th style="width: 12%;">Motivo cita</th>
-                          <th style="width: 15%;">Nombre medico</th>
-                          <th style="width: 8%;">Método pago</th>
-                          <th style="width: 8%;">Monto</th>
-                          <th style="width: 8%;">Fecha pago</th>
-                          <th style="width: 5%;">Accion</th>
-                        </tr>
-                      </thead>
-                      
-                      <tbody>
-                        <tr *ngFor="let factura of facturas">
-                          <td>{{ factura.id_factura }}</td>
-                          <td>{{ factura.citaMedica.paciente.rut }}</td>
-                          <td>{{ factura.citaMedica.paciente.nombre }} {{ factura.citaMedica.paciente.apellidos }}</td>
-                          <td>{{ factura.citaMedica.motivo }}</td>
-                          <td>{{ factura.citaMedica.medico.nombre }} {{ factura.citaMedica.medico.apellidos }}</td>
-                          <td>{{ factura.payment_method_id }}</td>
-                          <td>{{ factura.monto_pagado | currency }}</td>
-                          <td>{{ factura.fecha_pago }}</td>
-                         
-                     
-
-<td>
-  <div style="display: flex; align-items: center; justify-content: center;">
-      <!-- Icono de Eliminar -->
-      <div class="icon-container icon-delete" style="margin-right: 10px;">
-        <a class="cursor"
-        data-toggle="tooltip" 
-        data-original-title="Borrar"
-        (click)="borrarFactura( factura.id_factura )"> 
-        <i class="fa fa-close text-danger"></i> 
-      </a>
-      </div>
-     
-<div class="icon-container icon-print">
-    <a class="cursor" data-toggle="tooltip" data-original-title="Imprimir" 
-       [routerLink]="['/imprimir-factura', factura.id_factura]">
-        <i class="fa fa-print"></i> 
-    </a>
-</div>
-  </div>
-</td>
-
-
-
-              
-              
-              
-                      </tr>
-                    </tbody>
-                  </table>
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">ID</th>
+                                <th style="width: 10%;">RUT paciente</th>
+                                <th style="width: 15%;">Nombre paciente</th>
+                                <th style="width: 15%;">Motivo cita</th>
+                                <th style="width: 15%;">Nombre médico</th>
+                                <th style="width: 10%;">Método pago</th>
+                                <th style="width: 10%;">Monto</th>
+                                <th style="width: 12%;">Fecha pago</th>
+                                <th style="width: 8%;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let factura of facturas">
+                                <td>{{factura.id_factura}}</td>
+                                <td>{{factura.citaMedica.paciente.rut}}</td>
+                                <td>{{factura.citaMedica.paciente.nombre}} {{factura.citaMedica.paciente.apellidos}}</td>
+                                <td>{{factura.citaMedica.motivo}}</td>
+                                <td>{{factura.citaMedica.medico.nombre}} {{factura.citaMedica.medico.apellidos}}</td>
+                                <td>{{factura.payment_method_id}}</td>
+                                <td>{{factura.monto_pagado | currency}}</td>
+                                <td>{{factura.fecha_pago}}</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; justify-content: center;">
+                                        <!-- Icono de Eliminar -->
+                                        <div class="icon-container icon-delete">
+                                            <a class="cursor"
+                                               data-toggle="tooltip"
+                                               data-original-title="Borrar"
+                                               (click)="borrarFactura(factura.id_factura)">
+                                                <i class="fa fa-close text-danger"></i>
+                                            </a>
+                                        </div>
+                                        
+                                        <!-- Icono de Imprimir -->
+                                        <div class="icon-container icon-print">
+                                            <a class="cursor" 
+                                               data-toggle="tooltip" 
+                                               data-original-title="Imprimir"
+                                               [routerLink]="['/imprimir-factura', factura.id_factura]">
+                                                <i class="fa fa-print"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
                 
-                <div *ngIf="txtTermino.value.length === 0"> <!--SI EL TERMINO ES IGUAL A 0 LOS BOTONES SIGUIENTE Y ANTERIOR SE VAN A MOSTRAR CASO CONTRARIO VAN A DESAPARECER-->
-                  <app-paginator 
-                  [totalItems]="totalFacturas" 
-                  [(offset)]="desde" 
-                  [pageSize]="5"
-                  (offsetChange)="cambiarPagina($event)">
-                </app-paginator>
-              </div>
+                <!-- Paginador -->
+                <div *ngIf="txtTermino.value.length === 0">
+                    <app-paginator
+                        [totalItems]="totalFacturas"
+                        [(offset)]="desde"
+                        [pageSize]="5"
+                        (offsetChange)="cambiarPagina($event)">
+                    </app-paginator>
+                </div>
             </div>
         </div>
     </div>
-
 </div>
-

@@ -62,51 +62,76 @@ export default class AuthService {
    * @param userData Datos del usuario a registrar
    * @returns Objeto con el usuario registrado, token JWT y menú según su rol
    */
-  public async registrarUsuario(userData: any) {
-    // Encriptar la contraseña
-    const salt = bcrypt.genSaltSync();
-    userData.password = bcrypt.hashSync(userData.password, salt);
-    
-    // Crear usuario en la base de datos
-    const nuevoUsuario = await Usuario.create(userData);
-    
-    // Obtener el rol del usuario
-    const rol = await Rol.findByPk(nuevoUsuario.rolId);
-    const rolCodigo = rol ? rol.codigo : UserRole.USER;
-    
-    // Generar JWT usando el código del rol
-    const token = await JwtGenerate.instance.generarJWT(
-      nuevoUsuario.rut,
-      nuevoUsuario.nombre,
-      nuevoUsuario.apellidos,
-      rolCodigo // Usamos el código del rol, no el ID
-    );
-    
-    // Obtener menú según el rol
-    const menu = getMenuFrontEnd(rolCodigo);
-    
-    // Obtener información de la clínica
-    const infoClinica = await InfoClinica.findOne();
-    
-    // Datos para devolver (excluir contraseña)
-    const usuarioJSON = nuevoUsuario.toJSON();
-    
-    // Asegurarnos que rol sea la cadena del código, no el objeto completo
-    if (rol) {
-      // Agregamos el rol como propiedad separada para compatibilidad
-      usuarioJSON.rol = rol.codigo;
-    }
-    
-    const { password, ...usuarioSinPassword } = usuarioJSON;
-    
-    return {
-      userOrMedico: usuarioSinPassword, // Cambiado de "usuario" a "userOrMedico" para compatibilidad
-      token,
-      menu,
-      infoClinica
-    };
+ public async registrarUsuario(userData: any) {
+  console.log("🔍 INICIANDO REGISTRO DE USUARIO");
+  console.log("🔍 userData recibido:", userData);
+  
+  // ✅ BUSCAR Y ASIGNAR ROL DE USUARIO POR CÓDIGO (OPCIÓN ROBUSTA)
+  console.log("🔍 Buscando rol USER_ROLE en la base de datos...");
+  
+  const rolUsuario = await Rol.findOne({ where: { codigo: 'USER_ROLE' } });
+  console.log("🔍 Resultado de búsqueda de rol:", rolUsuario);
+  
+  if (!rolUsuario) {
+    console.error("❌ Error: Rol USER_ROLE no encontrado");
+    throw new Error('Rol de usuario no encontrado en el sistema');
   }
-
+  
+  console.log("✅ Rol encontrado:", { id: rolUsuario.id, codigo: rolUsuario.codigo });
+  
+  // Asignar el rolId encontrado
+  userData.rolId = rolUsuario.id;
+  console.log("✅ rolId asignado a userData:", userData.rolId);
+  
+  // Encriptar la contraseña
+  const salt = bcrypt.genSaltSync();
+  userData.password = bcrypt.hashSync(userData.password, salt);
+  
+  console.log("---------------AQUI EL USUARIO CON ROLID------------", userData);
+  console.log("password encriptado", userData.password);
+  console.log("rolId FINAL asignado:", userData.rolId);
+  
+  // Crear usuario en la base de datos
+  console.log("🔍 Creando usuario en la base de datos...");
+  const nuevoUsuario = await Usuario.create(userData);
+  console.log("✅ Usuario creado con rolId:", nuevoUsuario.rolId);
+  
+  // Obtener el rol del usuario (ya sabemos que existe)
+  const rolCodigo = rolUsuario.codigo;
+  console.log("✅ Código de rol para JWT:", rolCodigo);
+  
+  // Generar JWT usando el código del rol
+  const token = await JwtGenerate.instance.generarJWT(
+    nuevoUsuario.rut,
+    nuevoUsuario.nombre,
+    nuevoUsuario.apellidos,
+    rolCodigo // Usamos el código del rol
+  );
+  
+  console.log("✅ JWT generado con rol:", rolCodigo);
+  
+  // Obtener menú según el rol
+  const menu = getMenuFrontEnd(rolCodigo);
+  
+  // Obtener información de la clínica
+  const infoClinica = await InfoClinica.findOne();
+  
+  // Datos para devolver (excluir contraseña)
+  const usuarioJSON = nuevoUsuario.toJSON();
+  
+  // Agregar el rol como propiedad separada para compatibilidad
+  usuarioJSON.rol = rolCodigo;
+  console.log("✅ Usuario JSON final con rol:", usuarioJSON.rol);
+  
+  const { password, ...usuarioSinPassword } = usuarioJSON;
+  
+  return {
+    userOrMedico: usuarioSinPassword,
+    token,
+    menu,
+    infoClinica
+  };
+}
   /**
    * Autentica a un usuario en el sistema
    * @param email Email del usuario

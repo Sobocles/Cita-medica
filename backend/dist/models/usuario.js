@@ -63,7 +63,7 @@ Usuario.init({
             model: rol_1.default,
             key: 'id'
         },
-        defaultValue: 2 // Por defecto, ID del rol 'Usuario' (USER_ROLE)
+        defaultValue: 3 // Por defecto, ID del rol 'Usuario' (USER_ROLE)
     },
     estado: {
         type: sequelize_1.DataTypes.STRING,

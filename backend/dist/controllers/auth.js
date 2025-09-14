@@ -25,6 +25,7 @@ class Auth {
          */
         this.login = (req, res) => __awaiter(this, void 0, void 0, function* () {
             const { email, password } = req.body;
+            console.log("AQUI ESTA EL LOGIN!!!!!!!!!!!!");
             try {
                 // Autenticar usuario (incluye validación de credenciales, generación de token y menú)
                 const resultado = yield this.authService.autenticarUsuario(email, password);
@@ -47,6 +48,7 @@ class Auth {
          * Endpoint para registrar un nuevo usuario
          */
         this.registro = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            console.log("entro a crear usuario");
             const { email, password, nombre, apellidos, telefono } = req.body;
             try {
                 // Verificar si el correo ya está registrado

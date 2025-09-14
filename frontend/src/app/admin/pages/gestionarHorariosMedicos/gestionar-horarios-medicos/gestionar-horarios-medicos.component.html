@@ -1,7 +1,9 @@
+<!-- Sección de búsqueda y alerta -->
 <div class="row animated fadeIn fast">
   <div class="col-12">
-    <div class="card shadow-sm">
+    <div class="card">
       <div class="card-body">
+        <!-- Alerta informativa -->
         <div class="alert alert-info d-flex align-items-center" role="alert">
           <i class="fa fa-info-circle me-2"></i>
           <div>
@@ -10,73 +12,82 @@
           </div>
         </div>
 
-        <div class="mb-3">
-          <label for="searchSchedule" class="form-label fw-bold text-primary">Buscar horarios médicos</label>
-          <div class="input-group">
-            <span class="input-group-text bg-light">
-              <i class="fa fa-search"></i>
-            </span>
-            <input type="text"
-                   id="searchSchedule"
-                   class="form-control"
-                   placeholder="Ingrese día de trabajo (lunes, martes, miércoles...)"
-                   #txtTermino
-                   (keyup)="buscar(txtTermino.value)"/>
-          </div>
-          <small class="text-muted mt-1 d-block">Ejemplo: lunes, martes, miércoles...</small>
+        <!-- Buscador -->
+        <label for="searchSchedule" class="form-label">Buscar horarios médicos...</label>
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="fa fa-search"></i>
+          </span>
+          <input type="text"
+                 id="searchSchedule"
+                 class="form-control"
+                 placeholder="Ingrese día de trabajo (lunes, martes, miércoles...)"
+                 #txtTermino
+                 (keyup)="buscar(txtTermino.value)"/>
         </div>
+        <small class="text-muted mt-1 d-block">Ejemplo: lunes, martes, miércoles...</small>
       </div>
     </div>
   </div>
 </div>
 
-<div class="row mt-3">
+<!-- Tabla principal con botón agregar integrado -->
+<div class="row animated fadeIn fast mt-3">
   <div class="col-12">
-    <div class="card shadow-sm">
-      <div class="card-header bg-light">
+    <div class="card">
+      <div class="card-header">
         <div class="d-flex justify-content-between align-items-center">
           <div>
-            <h4 class="card-title mb-0">Horarios: <span class="badge bg-primary">{{ totalHorarios }}</span></h4>
-            <p class="text-muted small mb-0">Horarios médicos registrados en el sistema</p>
+            <h4 class="card-title">
+              Total de horarios
+              <span class="total-badge">{{totalHorarios}}</span>
+            </h4>
+            <h6 class="card-subtitle text-muted">Horarios médicos registrados en el sistema</h6>
           </div>
           <a routerLink="/agregar-horario-medico" class="btn btn-primary">
-            <i class="fa fa-plus-circle me-1"></i> Agregar Horario
+            <i class="fa fa-plus-circle"></i>
+            Agregar Horario
           </a>
         </div>
       </div>
+      
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table table-hover table-striped mb-0">
-            <thead class="bg-light text-dark">
+          <table class="table table-bordered">
+            <thead>
               <tr>
-                <th class="px-3 py-3" style="width: 12%;">Día</th>
-                <th class="px-3 py-3" style="width: 12%;">Inicio</th>
-                <th class="px-3 py-3" style="width: 12%;">Finalización</th>
-                <th class="px-3 py-3" style="width: 12%;">Inicio colación</th>
-                <th class="px-3 py-3" style="width: 12%;">Fin colación</th>
-                <th class="px-3 py-3" style="width: 20%;">Médico</th>
-                <th class="px-3 py-3" style="width: 12%;">Especialidad</th>
-                <th class="px-3 py-3 text-center" style="width: 8%;">Acciones</th>
+                <th style="width: 12%;">Día</th>
+                <th style="width: 12%;">Inicio</th>
+                <th style="width: 12%;">Finalización</th>
+                <th style="width: 12%;">Inicio colación</th>
+                <th style="width: 12%;">Fin colación</th>
+                <th style="width: 20%;">Médico</th>
+                <th style="width: 12%;">Especialidad</th>
+                <th style="width: 8%;" class="text-center">Acciones</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let horario of horarios">
-                <td class="px-3 py-2 align-middle text-capitalize">{{ horario.diaSemana }}</td>
-                <td class="px-3 py-2 align-middle">{{ horario.horaInicio }}</td>
-                <td class="px-3 py-2 align-middle">{{ horario.horaFinalizacion }}</td>
-                <td class="px-3 py-2 align-middle">{{ horario.inicio_colacion || '---' }}</td>
-                <td class="px-3 py-2 align-middle">{{ horario.fin_colacion || '---' }}</td>
-                <td class="px-3 py-2 align-middle text-capitalize">{{ horario.medico.nombre + ' ' + horario.medico.apellidos }}</td>
-                <td class="px-3 py-2 align-middle text-capitalize">{{ horario.medico.especialidad_medica }}</td>
-                <td class="px-3 py-2 align-middle text-center">
-                  <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-primary btn-sm" 
-                            data-toggle="tooltip" title="Editar" 
+                <td class="text-capitalize">{{horario.diaSemana}}</td>
+                <td>{{horario.horaInicio}}</td>
+                <td>{{horario.horaFinalizacion}}</td>
+                <td>{{horario.inicio_colacion || ''}}</td>
+                <td>{{horario.fin_colacion || ''}}</td>
+                <td class="text-capitalize">{{horario.medico.nombre + ' ' + horario.medico.apellidos}}</td>
+                <td class="text-capitalize">{{horario.medico.especialidad_medica}}</td>
+                <td class="text-center">
+                  <div class="btn-group">
+                    <button type="button" 
+                            class="btn btn-outline-primary btn-sm"
+                            data-toggle="tooltip"
+                            title="Editar"
                             (click)="editarHorario(horario)">
                       <i class="fa fa-pencil"></i>
                     </button>
-                    <button type="button" class="btn btn-outline-danger btn-sm" 
-                            data-toggle="tooltip" title="Eliminar" 
+                    <button type="button"
+                            class="btn btn-outline-danger btn-sm"
+                            data-toggle="tooltip"
+                            title="Eliminar"
                             (click)="borrarHorario(horario)">
                       <i class="fa fa-trash"></i>
                     </button>
@@ -86,7 +97,8 @@
               <tr *ngIf="horarios.length === 0">
                 <td colspan="8" class="text-center py-4">
                   <div class="text-muted">
-                    <i class="fa fa-info-circle me-1"></i> No se encontraron horarios médicos
+                    <i class="fa fa-info-circle"></i>
+                    No se encontraron horarios médicos
                   </div>
                 </td>
               </tr>
@@ -94,10 +106,11 @@
           </table>
         </div>
         
+        <!-- Paginador -->
         <div class="p-3" *ngIf="txtTermino.value.length === 0">
-          <app-paginator 
-            [totalItems]="totalHorarios" 
-            [(offset)]="desde" 
+          <app-paginator
+            [totalItems]="totalHorarios"
+            [(offset)]="desde"
             [pageSize]="5"
             (offsetChange)="cambiarPagina($event)">
           </app-paginator>

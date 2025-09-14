@@ -44,13 +44,13 @@ export class GestionarTiposCitasComponent implements OnInit{
     }).then((result) => {
       if (result.value) {
         
-        this.TipoCitaService.borrarTipoCita( tipocita.idTipo )
+        this.TipoCitaService.borrarTipoCita(tipocita.idTipoCita)
           .subscribe( resp => {
             console.log('aqui esta la respuesta',resp);
             this.cargaTipocita()
             Swal.fire(
               'Tipo de cita borrado',
-              `Tipo Cita ${ tipocita.idTipo } fue eliminado correctamente`,
+              `Tipo Cita ${ tipocita.idTipoCita } fue eliminado correctamente`,
               'success'
             );
             
@@ -77,7 +77,7 @@ export class GestionarTiposCitasComponent implements OnInit{
   
 
     editarTipoCita( tipoCita:any ){
-      this.router.navigate(['/editar-tipoCita', tipoCita.idTipo]);
+     this.router.navigate(['/editar-tipoCita', tipoCita.idTipoCita]);
     }
 
 

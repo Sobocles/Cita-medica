@@ -42,7 +42,9 @@ export class AuthService {
   
   login(email: string, password: string) {
     console.log('🔑 Iniciando login con email:', email);
+    console.log("HOLAAA");
     const body = { email, password };
+    console.log("aqui",body);
     return this.http.post(`${base_url}/login`, body).pipe(
       tap((resp: any) => {
         console.log('🔑 Respuesta completa de login:', resp);
@@ -65,7 +67,7 @@ export class AuthService {
 
   crearUsuario(formData: RegisterForm): Observable<RegisterForm> {
     console.log('Creando usuario con datos:', formData);    
-    return this.http.post<RegisterForm>(`${base_url}/usuarios`, formData)
+    return this.http.post<RegisterForm>(`${base_url}/login/registro`, formData)
       .pipe(
         tap((resp: any) => {
           console.log('Respuesta de registro exitosa:', resp);

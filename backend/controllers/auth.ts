@@ -27,6 +27,8 @@ export default class Auth {
   login = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
+    console.log("AQUI ESTA EL LOGIN!!!!!!!!!!!!");
+
     try {
       // Autenticar usuario (incluye validación de credenciales, generación de token y menú)
       const resultado = await this.authService.autenticarUsuario(email, password);
@@ -48,6 +50,8 @@ export default class Auth {
    * Endpoint para registrar un nuevo usuario
    */
   registro = async(req: Request, res: Response) => {
+
+    console.log("entro a crear usuario");
     const { email, password, nombre, apellidos, telefono } = req.body;
 
     try {

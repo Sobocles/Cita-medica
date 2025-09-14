@@ -8,17 +8,23 @@ export default class ValidarCampos {
         return this._instance || (this._instance = new ValidarCampos());
     }
 
-    public validarCampos(req: Request, res: Response, next: NextFunction){
-        const error = validationResult(req);
+validarCampos = (req: Request, res: Response, next: NextFunction) => {
+  console.log('🔍 VALIDAR CAMPOS - Body recibido:', JSON.stringify(req.body, null, 2));
+  console.log('🔍 VALIDAR CAMPOS - Headers:', req.headers['content-type']);
+  
+  const errors = validationResult(req);
+  
+  if (!errors.isEmpty()) {
+    console.log('❌ VALIDAR CAMPOS - Errores encontrados:', errors.array());
+    return res.status(400).json({
+      ok: false,
+      msg: 'Datos de entrada no válidos',
+      errors: errors.mapped()
+    });
+  }
 
-        if(!error.isEmpty()){
-            return res.status(400).json({
-                ok: false,
-                errors: error.mapped()
-            })
-        }
-
-        next();
-    }
+  console.log('✅ VALIDAR CAMPOS - Validación exitosa, continuando...');
+  next();
+}
 
 }

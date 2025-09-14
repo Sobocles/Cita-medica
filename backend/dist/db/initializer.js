@@ -44,9 +44,13 @@ exports.initializeData = initializeData;
 /**
  * Inicializa los roles básicos del sistema
  */
+/**
+ * Inicializa los roles básicos del sistema
+ * ORDEN CORREGIDO para coincidir con la base de datos actual
+ */
 function initializeRoles() {
     return __awaiter(this, void 0, void 0, function* () {
-        // Definir roles básicos
+        // ✅ ORDEN CORREGIDO: Debe coincidir con el orden de inserción en la migración
         const basicRoles = [
             {
                 nombre: 'Administrador',

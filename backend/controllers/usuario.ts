@@ -26,12 +26,15 @@ export const getAllUsuarios = async (req: Request, res: Response) => {
 };
 
 export const CrearUsuario = async (req: Request, res: Response) => {
+    console.log("ENTRO EN CREAR USUARIO");
     try {
         const user = await usuarioService.createUser(req.body);
         res.json({
             ok: true,
             usuario: user
         });
+
+        console.log("Usuario creado");
     } catch (error: any) {
         res.status(400).json({
             ok: false,

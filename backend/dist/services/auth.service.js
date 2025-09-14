@@ -108,28 +108,46 @@ class AuthService {
      */
     registrarUsuario(userData) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log("🔍 INICIANDO REGISTRO DE USUARIO");
+            console.log("🔍 userData recibido:", userData);
+            // ✅ BUSCAR Y ASIGNAR ROL DE USUARIO POR CÓDIGO (OPCIÓN ROBUSTA)
+            console.log("🔍 Buscando rol USER_ROLE en la base de datos...");
+            const rolUsuario = yield rol_1.default.findOne({ where: { codigo: 'USER_ROLE' } });
+            console.log("🔍 Resultado de búsqueda de rol:", rolUsuario);
+            if (!rolUsuario) {
+                console.error("❌ Error: Rol USER_ROLE no encontrado");
+                throw new Error('Rol de usuario no encontrado en el sistema');
+            }
+            console.log("✅ Rol encontrado:", { id: rolUsuario.id, codigo: rolUsuario.codigo });
+            // Asignar el rolId encontrado
+            userData.rolId = rolUsuario.id;
+            console.log("✅ rolId asignado a userData:", userData.rolId);
             // Encriptar la contraseña
             const salt = bcrypt_1.default.genSaltSync();
             userData.password = bcrypt_1.default.hashSync(userData.password, salt);
+            console.log("---------------AQUI EL USUARIO CON ROLID------------", userData);
+            console.log("password encriptado", userData.password);
+            console.log("rolId FINAL asignado:", userData.rolId);
             // Crear usuario en la base de datos
+            console.log("🔍 Creando usuario en la base de datos...");
             const nuevoUsuario = yield usuario_1.default.create(userData);
-            // Obtener el rol del usuario
-            const rol = yield rol_1.default.findByPk(nuevoUsuario.rolId);
-            const rolCodigo = rol ? rol.codigo : enums_1.UserRole.USER;
+            console.log("✅ Usuario creado con rolId:", nuevoUsuario.rolId);
+            // Obtener el rol del usuario (ya sabemos que existe)
+            const rolCodigo = rolUsuario.codigo;
+            console.log("✅ Código de rol para JWT:", rolCodigo);
             // Generar JWT usando el código del rol
-            const token = yield jwt_1.default.instance.generarJWT(nuevoUsuario.rut, nuevoUsuario.nombre, nuevoUsuario.apellidos, rolCodigo // Usamos el código del rol, no el ID
+            const token = yield jwt_1.default.instance.generarJWT(nuevoUsuario.rut, nuevoUsuario.nombre, nuevoUsuario.apellidos, rolCodigo // Usamos el código del rol
             );
+            console.log("✅ JWT generado con rol:", rolCodigo);
             // Obtener menú según el rol
             const menu = (0, menu_frontend_1.getMenuFrontEnd)(rolCodigo);
             // Obtener información de la clínica
             const infoClinica = yield info_clinica_1.default.findOne();
             // Datos para devolver (excluir contraseña)
             const usuarioJSON = nuevoUsuario.toJSON();
-            // Asegurarnos que rol sea la cadena del código, no el objeto completo
-            if (rol) {
-                // Agregamos el rol como propiedad separada para compatibilidad
-                usuarioJSON.rol = rol.codigo;
-            }
+            // Agregar el rol como propiedad separada para compatibilidad
+            usuarioJSON.rol = rolCodigo;
+            console.log("✅ Usuario JSON final con rol:", usuarioJSON.rol);
             const { password } = usuarioJSON, usuarioSinPassword = __rest(usuarioJSON, ["password"]);
             return {
                 userOrMedico: usuarioSinPassword,

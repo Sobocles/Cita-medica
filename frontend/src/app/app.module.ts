@@ -14,15 +14,6 @@ import { MedicosModule } from './medicos/medicos.module';
 import { AdminModule } from './admin/admin.module';
 
 
-
-
-
-
-
-
-
-
-
 @NgModule({
   declarations: [
     AppComponent,

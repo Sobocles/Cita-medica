@@ -66,12 +66,12 @@ Medico.init({
     },
     rolId: {
         type: sequelize_1.DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true,
         references: {
             model: rol_1.default,
             key: 'id'
         },
-        defaultValue: 3 // ID del rol MEDICO_ROLE (asumiendo que es 3)
+        defaultValue: 2 // ID del rol MEDICO_ROLE (asumiendo que es 3)
     },
     estado: {
         type: sequelize_1.DataTypes.STRING,

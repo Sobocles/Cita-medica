@@ -78,12 +78,12 @@ Medico.init(
     },
     rolId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: Rol,
         key: 'id'
       },
-      defaultValue: 3 // ID del rol MEDICO_ROLE (asumiendo que es 3)
+      defaultValue: 2 // ID del rol MEDICO_ROLE (asumiendo que es 3)
     },
     estado: {
       type: DataTypes.STRING,

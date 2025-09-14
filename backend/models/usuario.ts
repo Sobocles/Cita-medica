@@ -73,7 +73,7 @@ Usuario.init(
                 model: Rol,
                 key: 'id'
             },
-            defaultValue: 2 // Por defecto, ID del rol 'Usuario' (USER_ROLE)
+            defaultValue: 3 // Por defecto, ID del rol 'Usuario' (USER_ROLE)
         },
         estado: {
             type: DataTypes.STRING,

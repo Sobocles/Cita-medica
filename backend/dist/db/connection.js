@@ -11,10 +11,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.syncDatabase = void 0;
 const sequelize_1 = require("sequelize");
-const db = new sequelize_1.Sequelize('gestor', 'root', 'puppetmaster', {
-    host: 'localhost',
+const db = new sequelize_1.Sequelize(process.env.DB_NAME || 'gestor', process.env.DB_USER || 'root', process.env.DB_PASSWORD || 'puppetmaster', {
+    host: process.env.DB_HOST || 'localhost',
     dialect: 'mysql',
-    port: 3306
+    port: parseInt(process.env.DB_PORT || '3306')
 });
 // Sincronizar modelos con la base de datos
 const syncDatabase = () => __awaiter(void 0, void 0, void 0, function* () {

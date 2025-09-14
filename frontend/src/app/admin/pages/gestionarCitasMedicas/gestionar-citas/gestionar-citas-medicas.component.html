@@ -1,83 +1,82 @@
-
-
-<div class="row animated fadeIn fast"
->
+<!-- Sección de búsqueda -->
+<div class="row animated fadeIn fast">
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <p style="font-weight: bold; color: #3336ff;">Busca citas medicas por nombre del paciente o nombre del medico...</p>
+                <p>Buscar citas médicas...</p>
                 <input type="text"
-                        class="form-control"
-                        placeholder="Buscar Citas medica..."
-                        #txtTermino
-                        (keyup)="buscar( txtTermino.value )"/>
-
+                       class="form-control"
+                       placeholder="Buscar citas por nombre del paciente o médico..."
+                       #txtTermino
+                       (keyup)="buscar(txtTermino.value)"/>
             </div>
         </div>
     </div>
-</div>  
+</div>
 
-                    <!--BOTON DE CREAR MEDICO-->
-                    <div class="col">
-                        <div class="text-right">
-                            <a class="btn btn-primary"
-                               routerLink="/agregar-cita">
-                                <i class="fa fa-hospital-o"></i> 
-                                Crear cita Medica
-                            </a>
-                        </div>
-                    </div>
+<!-- Botón agregar -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <!-- Contenido principal aquí -->
+        </div>
+        <div class="col-auto">
+            <a routerLink="/agregar-cita" class="btn btn-primary">
+                <i class="fa fa-hospital-o"></i>
+                Crear cita Médica
+            </a>
+        </div>
+    </div>
+</div>
 
-         
-
-
-<div class="row animated fadeIn fast"> 
+<!-- Tabla principal -->
+<div class="row animated fadeIn fast">
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <h4 class="card-title">Total de Citas medica: </h4>
-                <h6 class="card-subtitle">Citas registrados en mi aplicacion ({{totalCitas}})</h6>
+                <h4 class="card-title">
+                    Total de citas médicas
+                    <span class="total-badge">{{totalCitas}}</span>
+                </h4>
+                <h6 class="card-subtitle">Citas registradas en mi aplicación</h6>
+                
                 <div class="table-responsive">
                     <table class="table table-bordered">
                         <thead>
                             <tr>
-                              <th style="width: 8%;">Id</th>
-                              <th style="width: 12%;">Fecha</th>
-                              <th style="width: 20%;">Paciente</th>
-                              <th style="width: 20%;">Médico</th>
-                              <th style="width: 15%;">Tipo de cita</th>
-                              <th style="width: 10%;">Estado</th>
-                              <th style="width: 10%;">Hora inicio</th>
-                              <th style="width: 10%;">Hora fin</th>
-                              <th style="width: 10%;">Acciones</th>
+                                <th style="width: 8%;">ID</th>
+                                <th style="width: 12%;">Fecha</th>
+                                <th style="width: 20%;">Paciente</th>
+                                <th style="width: 20%;">Médico</th>
+                                <th style="width: 15%;">Tipo de cita</th>
+                                <th style="width: 10%;">Estado</th>
+                                <th style="width: 10%;">Hora inicio</th>
+                                <th style="width: 10%;">Hora fin</th>
+                                <th style="width: 5%;">Acciones</th>
                             </tr>
-                          </thead>
-                          
+                        </thead>
                         <tbody>
                             <tr *ngFor="let cita of citas">
-                               
-                                <th>{{ cita.idCita }}</th>
-                                <td>{{ cita.fecha | date: 'MMM d, y' }}</td>
-                                <td>{{ cita.paciente.nombre + ' ' + cita.paciente.apellidos }}</td>
-                                <td>{{ cita.medico.nombre + ' ' + cita.medico.apellidos }}</td>
-
-                                <td>{{ cita.motivo }}</td>
-
-                                <select class="form-control" [(ngModel)]="cita.estado" (change)="cambioEstado(cita)">
-                                    <option value="en_curso">En Curso</option>
-                                    <option value="terminado">Terminado</option>
-                                    <option value="no_asistio">No Asistió</option>
-                                    <option value="pagado">Pagado</option>
-                                    <option value="no_pagado">no Pagado</option>
-                                    <option value="cancelada">cancelada</option>
-                                 
-                                </select>
-                                
-                                  
-                                <td>{{ cita.hora_inicio }}</td>
-                                <td>{{ cita.hora_fin }}</td>
+                                <th>{{cita.idCita}}</th>
+                                <td>{{cita.fecha | date: 'MMM d, y'}}</td>
+                                <td>{{cita.paciente.nombre + ' ' + cita.paciente.apellidos}}</td>
+                                <td>{{cita.medico.nombre + ' ' + cita.medico.apellidos}}</td>
+                                <td>{{cita.motivo}}</td>
+                                <td>
+                                    <select class="form-control" 
+                                            [(ngModel)]="cita.estado" 
+                                            (change)="cambioEstado(cita)">
+                                        <option value="en_curso">En Curso</option>
+                                        <option value="terminado">Terminado</option>
+                                        <option value="no_asistio">No Asistió</option>
+                                        <option value="pagado">Pagado</option>
+                                        <option value="no_pagado">No Pagado</option>
+                                        <option value="cancelada">Cancelada</option>
+                                    </select>
+                                </td>
+                                <td>{{cita.hora_inicio}}</td>
+                                <td>{{cita.hora_fin}}</td>
                                 <td class="text-nowrap text-center">
-                                    
                                     <a data-toggle="tooltip"
                                        data-original-title="Borrar"
                                        class="cursor"
@@ -89,19 +88,17 @@
                         </tbody>
                     </table>
                 </div>
-                <div *ngIf="txtTermino.value.length === 0"> <!--SI EL TERMINO ES IGUAL A 0 LOS BOTONES SIGUIENTE Y ANTERIOR SE VAN A MOSTRAR CASO CONTRARIO VAN A DESAPARECER-->
-                    <app-paginator 
-                    [totalItems]="totalCitas" 
-                    [(offset)]="desde" 
-                    [pageSize]="5"
-                    (offsetChange)="cambiarPagina($event)">
-                  </app-paginator>
+                
+                <!-- Paginador -->
+                <div *ngIf="txtTermino.value.length === 0">
+                    <app-paginator
+                        [totalItems]="totalCitas"
+                        [(offset)]="desde"
+                        [pageSize]="5"
+                        (offsetChange)="cambiarPagina($event)">
+                    </app-paginator>
                 </div>
             </div>
         </div>
     </div>
-
 </div>
-
-
-

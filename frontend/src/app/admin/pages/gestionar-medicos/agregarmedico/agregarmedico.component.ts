@@ -83,17 +83,21 @@ export class AgregarmedicoComponent implements OnInit {
     return value.endsWith('@gmail.com') ? null : { notGmail: true };
   }
 
-  cargaEspecialidades(): void {
-    this.tipoCitaService.cargaEspecialidades().subscribe(
+cargaEspecialidades(): void {
+    // Usar el nuevo endpoint que devuelve TODAS las especialidades
+    this.tipoCitaService.cargaTodasEspecialidades().subscribe(
       data => {
+        console.log('Todas las especialidades para médico:', data);
         // Suponiendo que data.especialidades es un arreglo de objetos con la propiedad especialidad_medica
         this.especialidades = data.especialidades.map((e: { especialidad_medica: string }) => e.especialidad_medica);
+        console.log('Especialidades procesadas:', this.especialidades);
       },
       error => {
         console.error("Error al cargar especialidades:", error);
       }
     );
-  }
+}
+  
 
   onSubmit(): void {
     console.log("aholaaa");

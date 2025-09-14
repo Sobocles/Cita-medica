@@ -10,12 +10,7 @@ const router = Router();
 
 
 router.post(
-    '/',
-   
-   
-
-      // Puedes agregar más validaciones según tus necesidades
-   
+    '/', 
     buscarmedico
   );
 

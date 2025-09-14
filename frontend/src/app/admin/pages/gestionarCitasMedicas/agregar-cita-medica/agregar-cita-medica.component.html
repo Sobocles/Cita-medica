@@ -56,3 +56,36 @@
 
 
 </form>
+<!-- Coloca esto DESPUÉS del formulario y ANTES del mensaje de advertencia -->
+<div class="row g-4 mt-4">
+  <div class="col-12">
+    <h4 class="mb-3 text-secondary">Disponibilidad por día</h4>
+    <div class="alert alert-info shadow-sm">
+      <i class="bi bi-info-circle me-2"></i>
+      Consulta las especialidades disponibles por día para programar citas.
+    </div>
+    <div class="row g-3">
+      <div class="col-md-3 col-sm-6" *ngFor="let dia of ordenDias">
+        <div class="card h-100 border-start-4 border-primary shadow-sm hover-shadow">
+          <div class="card-body">
+            <h5 class="card-title text-primary">
+              <i class="bi bi-calendar-event me-2"></i>{{ dia | titlecase }}
+            </h5>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex align-items-center" 
+                  *ngFor="let especialidad of horariosEspecialidades[dia]">
+                <i class="bi bi-check2-circle text-success me-2"></i>
+                {{ especialidad }}
+              </li>
+              <li class="list-group-item text-muted small" 
+                  *ngIf="!horariosEspecialidades[dia]?.length">
+                No hay especialidades este día
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -16,8 +16,8 @@ export interface CitaMedicaAttributes {
   estado: string;
   descripcion?: string;
   idTipoCita?: number;
-  estado_actividad?: string; 
-  tipoCita?: TipoCita; 
+  estado_actividad?: string;
+  tipoCita?: TipoCita;
 }
 
 export class CitaMedica extends Model<CitaMedicaAttributes> {
@@ -33,6 +33,7 @@ export class CitaMedica extends Model<CitaMedicaAttributes> {
   public idTipoCita?: number;
   public estado_actividad!: string;
   public tipoCita?: TipoCita;
+
   // Asociaciones
   public readonly medico?: Medico;
   public readonly paciente?: Usuario;
@@ -40,7 +41,6 @@ export class CitaMedica extends Model<CitaMedicaAttributes> {
   public static associations: {
     medico: Association<CitaMedica, Medico>;
     paciente: Association<CitaMedica, Usuario>;
-
   };
 }
 
@@ -59,7 +59,7 @@ CitaMedica.init(
       type: DataTypes.STRING,
       allowNull: false,
       references: {
-        model: 'Usuarios',  
+        model: 'usuarios',  // ✅ Cambiado a minúscula
         key: 'rut',
       },
     },
@@ -67,7 +67,7 @@ CitaMedica.init(
       type: DataTypes.STRING,
       allowNull: false,
       references: {
-        model: 'Medicos',  
+        model: 'medicos',   // ✅ Cambiado a minúscula
         key: 'rut',
       },
     },
@@ -96,15 +96,15 @@ CitaMedica.init(
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: 'tipocitas',  
-        key: 'idTipoCita', 
+        model: 'tipocitas',  // ✅ Ya está correcto
+        key: 'idTipoCita',
       }
     },
     estado_actividad: {
       type: DataTypes.STRING,
       allowNull: false,
-      defaultValue: 'activo' 
-  },
+      defaultValue: 'activo'
+    },
   },
   {
     sequelize: db,
@@ -112,6 +112,5 @@ CitaMedica.init(
     tableName: 'citamedicas'  
   }
 );
-
 
 export default CitaMedica;

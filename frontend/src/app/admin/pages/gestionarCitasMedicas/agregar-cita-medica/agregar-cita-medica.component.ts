@@ -13,6 +13,7 @@ import { UsuariosResponse } from '../../interface/paciente';
 import { tipoCitaResponse } from '../../interface/tipoCita';
 import { HorarioMedicoService } from '../../services/horario-medico.service';
 import { CitasResponsex } from '../../interface/cita_medicaResponse';
+import { HorarioClinicaService } from 'src/app/pacientes/services/horario-clinica.service';
 
 export interface Especialidad {
   especialidad_medica: string;
@@ -25,6 +26,9 @@ export interface Especialidad {
   styleUrls: ['./agregar-cita-medica.component.scss']
 })
 export class AgregarCitaMedicaComponent implements OnInit {
+
+     ordenDias: string[] = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+     horariosEspecialidades: {[key: string]: string[]} = {};
   
         motivo: string = '';
         formulario!: FormGroup;
@@ -49,7 +53,7 @@ export class AgregarCitaMedicaComponent implements OnInit {
 
 
 
-  constructor(private fb: FormBuilder, private citaMedicaService: CitaMedicaService, private router: Router, private PacienteService: PacienteService, private TipoCitaService: TipoCitaService, private MedicoService: MedicoService, private HorarioMedicoService: HorarioMedicoService) { }
+  constructor(private fb: FormBuilder, private citaMedicaService: CitaMedicaService, private router: Router, private PacienteService: PacienteService, private TipoCitaService: TipoCitaService, private MedicoService: MedicoService, private HorarioMedicoService: HorarioMedicoService, private horarioClinicaService: HorarioClinicaService) { }
 
   ngOnInit(): void {
     this.formulario= this.fb.group({
@@ -68,8 +72,20 @@ export class AgregarCitaMedicaComponent implements OnInit {
    this.cargaPacientes();
     this.cargaTipocita();
     this.cargaEspecialidades();
+    this.cargarDisponibilidad();
+    
   }
 
+   cargarDisponibilidad() {
+  this.horarioClinicaService.obtenerHorarioEspecialidades().subscribe(
+    (horarios: any) => {
+      this.horariosEspecialidades = horarios;
+    },
+    error => {
+      console.error('Error al obtener horarios de especialidades:', error);
+    }
+  );
+   }
   onMedicoSelected(event: any): void {
    
     console.log('AQUI ESTA EL MEDICO SELECCIONADO',this.selectedMedico);

@@ -41,12 +41,14 @@ const getAllUsuarios = (req, res) => __awaiter(void 0, void 0, void 0, function*
 });
 exports.getAllUsuarios = getAllUsuarios;
 const CrearUsuario = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("ENTRO EN CREAR USUARIO");
     try {
         const user = yield usuario_service_1.default.createUser(req.body);
         res.json({
             ok: true,
             usuario: user
         });
+        console.log("Usuario creado");
     }
     catch (error) {
         res.status(400).json({
