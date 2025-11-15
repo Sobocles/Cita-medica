@@ -12,7 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.buscarBloquesDisponibles = exports.buscarHorarioMedico = exports.buscarTipoCita = exports.buscarmedico = void 0;
+exports.buscarmedico = void 0;
+exports.buscarTipoCita = buscarTipoCita;
+exports.buscarHorarioMedico = buscarHorarioMedico;
+exports.buscarBloquesDisponibles = buscarBloquesDisponibles;
 const sequelize_1 = require("sequelize");
 const medico_1 = __importDefault(require("../models/medico"));
 const horario_medico_1 = __importDefault(require("../models/horario_medico"));
@@ -95,7 +98,6 @@ function buscarTipoCita(especialidad_medica) {
         return tipoCita;
     });
 }
-exports.buscarTipoCita = buscarTipoCita;
 function buscarHorarioMedico(tipoCita, diaSemana) {
     return __awaiter(this, void 0, void 0, function* () {
         console.log('Buscando horario para:', tipoCita, diaSemana);
@@ -117,7 +119,7 @@ function buscarHorarioMedico(tipoCita, diaSemana) {
                     diaSemana: diaSemana,
                     rut_medico: medico.rut
                 },
-                attributes: ['rut_medico', 'horaInicio', 'horaFinalizacion', 'inicio_colacion', 'fin_colacion'],
+                attributes: ['rut_medico', 'horaInicio', 'horaFinalizacion', 'inicio_colacion', 'fin_colacion'], // Incluir campos de colación
                 include: [
                     {
                         model: medico_1.default,
@@ -143,7 +145,6 @@ function buscarHorarioMedico(tipoCita, diaSemana) {
         return [];
     });
 }
-exports.buscarHorarioMedico = buscarHorarioMedico;
 function buscarBloquesDisponibles(resultadoFormateado, duracionCita, fechaFormateada, precioCita, idTipoCita, especialidad) {
     return __awaiter(this, void 0, void 0, function* () {
         if (!resultadoFormateado || !resultadoFormateado.horainicio || !resultadoFormateado.horafinalizacion) {
@@ -172,7 +173,7 @@ function buscarBloquesDisponibles(resultadoFormateado, duracionCita, fechaFormat
             if (!(inicioColacion !== null && finColacion !== null && i < finColacion && i + intervalo > inicioColacion)) {
                 bloquesPosibles.push({
                     rutMedico: medicoRut,
-                    medicoNombre,
+                    medicoNombre, // Agregar el nombre del médico a cada bloque
                     hora_inicio: minutesToTime(i),
                     hora_fin: minutesToTime(i + intervalo),
                     precio: precioCita,
@@ -196,7 +197,7 @@ function buscarBloquesDisponibles(resultadoFormateado, duracionCita, fechaFormat
                     [sequelize_1.Op.eq]: new Date(fechaFormateada)
                 },
                 [sequelize_1.Op.and]: [
-                    { estado: { [sequelize_1.Op.ne]: 'cancelada' } },
+                    { estado: { [sequelize_1.Op.ne]: 'cancelada' } }, // Excluye citas canceladas
                     { estado: { [sequelize_1.Op.ne]: 'no_pagado' } } // Excluye citas no pagadas
                 ],
                 estado_actividad: 'activo' // Incluir solo citas con estado_actividad 'activo'
@@ -223,5 +224,4 @@ function buscarBloquesDisponibles(resultadoFormateado, duracionCita, fechaFormat
         return bloquesPosibles.filter(bloquePosible => !bloquesOcupados.some(bloqueOcupado => bloquePosible.hora_inicio < bloqueOcupado.hora_fin && bloquePosible.hora_fin > bloqueOcupado.hora_inicio));
     });
 }
-exports.buscarBloquesDisponibles = buscarBloquesDisponibles;
 //# sourceMappingURL=busqueda_cita.js.map

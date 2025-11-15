@@ -19,8 +19,8 @@ const historial_medico_1 = __importDefault(require("../models/historial_medico")
 const sequelize_1 = require("sequelize");
 class UsuarioRepository {
     // Obtener usuarios paginados
-    findActiveUsers(desde, limit = 5) {
-        return __awaiter(this, void 0, void 0, function* () {
+    findActiveUsers(desde_1) {
+        return __awaiter(this, arguments, void 0, function* (desde, limit = 5) {
             return usuario_1.default.findAll({
                 attributes: { exclude: ['password', 'createdAt', 'updatedAt'] },
                 where: { estado: 'activo' },

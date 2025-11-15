@@ -21,8 +21,8 @@ const sequelize_1 = require("sequelize");
 const tipo_cita_1 = __importDefault(require("../models/tipo_cita"));
 class MedicoRepository {
     // Obtener médicos paginados
-    findActiveMedicos(desde, limit = 5) {
-        return __awaiter(this, void 0, void 0, function* () {
+    findActiveMedicos(desde_1) {
+        return __awaiter(this, arguments, void 0, function* (desde, limit = 5) {
             return medico_1.default.findAll({
                 where: { estado: 'activo' },
                 include: [{

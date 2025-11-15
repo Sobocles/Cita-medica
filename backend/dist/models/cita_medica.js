@@ -24,7 +24,7 @@ CitaMedica.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
         references: {
-            model: 'usuarios',
+            model: 'usuarios', // ✅ Cambiado a minúscula
             key: 'rut',
         },
     },
@@ -32,7 +32,7 @@ CitaMedica.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
         references: {
-            model: 'medicos',
+            model: 'medicos', // ✅ Cambiado a minúscula
             key: 'rut',
         },
     },
@@ -61,7 +61,7 @@ CitaMedica.init({
         type: sequelize_1.DataTypes.INTEGER,
         allowNull: true,
         references: {
-            model: 'tipocitas',
+            model: 'tipocitas', // ✅ Ya está correcto
             key: 'idTipoCita',
         }
     },

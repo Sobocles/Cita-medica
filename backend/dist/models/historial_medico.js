@@ -41,7 +41,7 @@ HistorialMedico.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
         references: {
-            model: usuario_1.default,
+            model: usuario_1.default, // Referencia al modelo Paciente
             key: 'rut'
         }
     },
@@ -49,7 +49,7 @@ HistorialMedico.init({
         type: sequelize_1.DataTypes.STRING,
         allowNull: false,
         references: {
-            model: medico_1.default,
+            model: medico_1.default, // Referencia al modelo Medico
             key: 'rut'
         }
     },
@@ -59,7 +59,7 @@ HistorialMedico.init({
         defaultValue: 'activo' // Valor por defecto es 'activo'
     },
 }, {
-    sequelize: connection_1.default,
+    sequelize: connection_1.default, // Conecta el modelo a tu instancia de Sequelize
     modelName: 'HistorialMedico', // Nombre de la tabla en la base de datos
 });
 exports.default = HistorialMedico;

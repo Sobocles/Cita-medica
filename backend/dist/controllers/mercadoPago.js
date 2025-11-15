@@ -99,8 +99,8 @@ const receiveWebhook = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.receiveWebhook = receiveWebhook;
-function obtenerPagoConReintentos(paymentId, maxRetries = 10, baseDelay = 5000) {
-    return __awaiter(this, void 0, void 0, function* () {
+function obtenerPagoConReintentos(paymentId_1) {
+    return __awaiter(this, arguments, void 0, function* (paymentId, maxRetries = 10, baseDelay = 5000) {
         let retries = 0;
         while (retries < maxRetries) {
             try {

@@ -84,8 +84,8 @@ class MedicosController {
         });
     }
     crearMedico(req, res) {
-        var _a;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             try {
                 const medico = yield medico_service_1.default.createMedico(req.body);
                 // Para el token, necesitamos el rol como string

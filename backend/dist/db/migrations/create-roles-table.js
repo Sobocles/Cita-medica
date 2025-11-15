@@ -9,7 +9,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.down = exports.up = void 0;
+exports.up = up;
+exports.down = down;
 // BACKEND/db/migrations/create-roles-table.ts
 /**
  * Este archivo debe ejecutarse para crear la tabla de roles
@@ -84,11 +85,9 @@ function up(queryInterface) {
         ]);
     });
 }
-exports.up = up;
 function down(queryInterface) {
     return __awaiter(this, void 0, void 0, function* () {
         yield queryInterface.dropTable('roles');
     });
 }
-exports.down = down;
 //# sourceMappingURL=create-roles-table.js.map

@@ -20,11 +20,11 @@ class CitaController {
             try {
                 const desde = Number(req.query.desde) || 0;
                 const limite = Number(req.query.limite) || 5;
-                const { count, rows: citas } = yield Cita_service_1.default.getCitas(desde, limite);
+                const resultado = yield Cita_service_1.default.getCitas(desde, limite);
                 res.json({
                     ok: true,
-                    citas,
-                    total: count
+                    citas: resultado.citas,
+                    total: resultado.total
                 });
             }
             catch (error) {

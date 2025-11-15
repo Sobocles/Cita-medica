@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initializeData = void 0;
+exports.initializeData = initializeData;
 const rol_1 = __importDefault(require("../models/rol"));
 const usuario_1 = __importDefault(require("../models/usuario"));
 const connection_1 = __importDefault(require("../db/connection")); // Añadido
@@ -40,7 +40,6 @@ function initializeData() {
         }
     });
 }
-exports.initializeData = initializeData;
 /**
  * Inicializa los roles básicos del sistema
  */
@@ -54,17 +53,17 @@ function initializeRoles() {
         const basicRoles = [
             {
                 nombre: 'Administrador',
-                codigo: enums_1.UserRole.ADMIN,
+                codigo: enums_1.UserRole.ADMIN, // 1. ADMIN_ROLE (id: 1)
                 descripcion: 'Acceso completo a todas las funciones del sistema'
             },
             {
                 nombre: 'Médico',
-                codigo: enums_1.UserRole.MEDICO,
+                codigo: enums_1.UserRole.MEDICO, // 2. MEDICO_ROLE (id: 2) ✅
                 descripcion: 'Acceso a funciones de gestión médica'
             },
             {
                 nombre: 'Usuario',
-                codigo: enums_1.UserRole.USER,
+                codigo: enums_1.UserRole.USER, // 3. USER_ROLE (id: 3) ✅
                 descripcion: 'Acceso básico para pacientes'
             }
         ];
@@ -109,7 +108,7 @@ function initializeAdminUser() {
                 fecha_nacimiento: new Date('1990-01-01'),
                 telefono: '123456789',
                 direccion: 'Dirección de Administración',
-                rolId: adminRole.id,
+                rolId: adminRole.id, // Usar el ID del rol, no el código
                 estado: 'activo'
             };
             yield usuario_1.default.create(adminData);

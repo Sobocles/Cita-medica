@@ -12,7 +12,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.obtenerFacturaPorId = exports.getAllFacturas = exports.eliminarFactura = void 0;
+exports.eliminarFactura = eliminarFactura;
+exports.getAllFacturas = getAllFacturas;
+exports.obtenerFacturaPorId = obtenerFacturaPorId;
 const factura_1 = __importDefault(require("../models/factura"));
 const cita_medica_1 = __importDefault(require("../models/cita_medica"));
 const usuario_1 = __importDefault(require("../models/usuario"));
@@ -45,7 +47,6 @@ function eliminarFactura(req, res) {
         }
     });
 }
-exports.eliminarFactura = eliminarFactura;
 ;
 function getAllFacturas(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
@@ -118,10 +119,9 @@ function getAllFacturas(req, res) {
         }
     });
 }
-exports.getAllFacturas = getAllFacturas;
 function obtenerFacturaPorId(req, res) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
     return __awaiter(this, void 0, void 0, function* () {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
         const id = req.params.id;
         const idfactura = parseInt(id);
         try {
@@ -180,6 +180,5 @@ function obtenerFacturaPorId(req, res) {
         }
     });
 }
-exports.obtenerFacturaPorId = obtenerFacturaPorId;
 ;
 //# sourceMappingURL=facturas.js.map

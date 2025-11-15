@@ -6,13 +6,13 @@ export default class CitaController {
         try {
             const desde = Number(req.query.desde) || 0;
             const limite = Number(req.query.limite) || 5;
-            
-            const { count, rows: citas } = await citaService.getCitas(desde, limite);
-            
+
+            const resultado = await citaService.getCitas(desde, limite);
+
             res.json({
                 ok: true,
-                citas,
-                total: count
+                citas: resultado.citas,
+                total: resultado.total
             });
         } catch (error: any) {
             res.status(500).json({ error: error.message });

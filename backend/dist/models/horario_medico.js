@@ -26,11 +26,11 @@ HorarioMedic.init({
         allowNull: false,
     },
     inicio_colacion: {
-        type: sequelize_1.DataTypes.TIME,
+        type: sequelize_1.DataTypes.TIME, // Asumiendo que el formato de tiempo es adecuado
         allowNull: true, // Puede cambiar a false si es un campo requerido
     },
     fin_colacion: {
-        type: sequelize_1.DataTypes.TIME,
+        type: sequelize_1.DataTypes.TIME, // Asumiendo que el formato de tiempo es adecuado
         allowNull: true, // Puede cambiar a false si es un campo requerido
     },
     rut_medico: {

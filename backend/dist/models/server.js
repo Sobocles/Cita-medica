@@ -31,7 +31,7 @@ class Server {
     constructor() {
         this.apiPaths = {
             usuarios: '/api/usuarios',
-            login: '/api/login',
+            login: '/api/login', // Ruta para el login
             medicos: '/api/medicos',
             historial_medico: '/api/historial',
             horario_laboral: '/api/horario_medico',

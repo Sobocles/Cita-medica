@@ -14,136 +14,164 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CitaService = void 0;
 const CitaRepository_1 = __importDefault(require("../repositories/CitaRepository"));
-const sequelize_1 = require("sequelize");
+/**
+ * Servicio que contiene la lógica de negocio para las citas médicas
+ */
 class CitaService {
-    // Lógica para obtener citas con paginación
-    getCitas(desde, limite) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const defaultFilters = {
-                estado_actividad: 'activo',
-                estado: { [sequelize_1.Op.ne]: 'no_pagado' }
+    /**
+     * Obtiene todas las citas activas (excluyendo no pagadas) con paginación
+     */
+    getCitas() {
+        return __awaiter(this, arguments, void 0, function* (desde = 0, limite = 5) {
+            const totalCitas = yield CitaRepository_1.default.countActiveCitasExcludingNoPagado();
+            const citas = yield CitaRepository_1.default.findActiveCitasWithRelations(desde, limite);
+            return {
+                citas,
+                total: totalCitas
             };
-            return CitaRepository_1.default.findAndCountAll({
-                where: defaultFilters,
-                include: this.getDefaultIncludes(),
-                attributes: ['idCita', 'motivo', 'fecha', 'hora_inicio', 'hora_fin', 'estado'],
-                offset: desde,
-                limit: limite
-            });
         });
     }
-    // Lógica para obtener citas de un médico
-    getCitasMedico(rut_medico, desde, limite) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const where = {
-                rut_medico,
-                estado: { [sequelize_1.Op.or]: ['en_curso', 'pagado', 'terminado'] },
-                estado_actividad: 'activo'
+    /**
+     * Obtiene las citas de un médico específico con paginación
+     */
+    getCitasMedico(rut_medico_1) {
+        return __awaiter(this, arguments, void 0, function* (rut_medico, desde = 0, limite = 5) {
+            if (!rut_medico) {
+                throw new Error('El RUT del médico es requerido');
+            }
+            const totalCitas = yield CitaRepository_1.default.countCitasByMedico(rut_medico);
+            const citas = yield CitaRepository_1.default.findCitasByMedico(rut_medico, desde, limite);
+            if (!citas || citas.length === 0) {
+                throw new Error('No se encontraron citas activas para este médico');
+            }
+            return {
+                count: totalCitas,
+                citas
             };
-            const { count, rows } = yield CitaRepository_1.default.findAndCountAll({
-                where,
-                include: this.getDefaultIncludes(),
-                attributes: { exclude: ['rut_paciente', 'rut_medico'] },
-                offset: desde,
-                limit: limite
-            });
-            return { count, citas: rows };
         });
     }
-    // Lógica para obtener citas de un paciente
-    getCitasPaciente(rut_paciente, desde, limite) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const where = {
-                rut_paciente,
-                estado: { [sequelize_1.Op.or]: ['en_curso', 'pagado', 'terminado'] },
-                estado_actividad: 'activo'
+    /**
+     * Obtiene las citas de un paciente específico con paginación
+     */
+    getCitasPaciente(rut_paciente_1) {
+        return __awaiter(this, arguments, void 0, function* (rut_paciente, desde = 0, limite = 5) {
+            if (!rut_paciente) {
+                throw new Error('El RUT del paciente es requerido');
+            }
+            const totalCitas = yield CitaRepository_1.default.countCitasByPaciente(rut_paciente);
+            const citas = yield CitaRepository_1.default.findCitasByPaciente(rut_paciente, desde, limite);
+            if (!citas || citas.length === 0) {
+                throw new Error('No se encontraron citas activas para este paciente');
+            }
+            return {
+                count: totalCitas,
+                citas
             };
-            const { count, rows } = yield CitaRepository_1.default.findAndCountAll({
-                where,
-                include: this.getDefaultIncludes(),
-                attributes: { exclude: ['rut_paciente', 'rut_medico'] },
-                offset: desde,
-                limit: limite
-            });
-            return { count, citas: rows };
         });
     }
-    // Lógica para obtener cita con factura
+    /**
+     * Obtiene una cita con su factura y relaciones completas
+     */
     getCitaFactura(idCita) {
         return __awaiter(this, void 0, void 0, function* () {
-            return CitaRepository_1.default.findByPk(idCita, {
-                include: [
-                    ...this.getDefaultIncludes(),
-                    {
-                        association: 'factura',
-                        required: false
-                    }
-                ]
-            });
+            if (!idCita) {
+                throw new Error('Es necesario el ID de la cita médica');
+            }
+            const citaMedica = yield CitaRepository_1.default.findCitaWithFactura(idCita);
+            if (!citaMedica) {
+                throw new Error('Cita médica no encontrada');
+            }
+            return citaMedica;
         });
     }
-    // Lógica para crear cita
+    /**
+     * Crea una nueva cita médica (usado por administradores)
+     */
     crearCita(citaData) {
         return __awaiter(this, void 0, void 0, function* () {
+            // Verificar si ya existe una cita con el mismo ID (si se proporciona)
+            if (citaData.idCita) {
+                const citaExistente = yield CitaRepository_1.default.findByPk(citaData.idCita);
+                if (citaExistente) {
+                    throw new Error('Ya existe una cita con el mismo ID');
+                }
+            }
             return CitaRepository_1.default.create(citaData);
         });
     }
-    // Lógica para verificar citas existentes de un usuario
+    /**
+     * Verifica si un paciente tiene citas activas (pagadas o en curso)
+     */
     verificarCitasUsuario(rut_paciente) {
         return __awaiter(this, void 0, void 0, function* () {
-            const citaExistente = yield CitaRepository_1.default.findOne({
-                where: {
-                    rut_paciente,
-                    estado: { [sequelize_1.Op.or]: ['pagado', 'en_curso'] },
-                    estado_actividad: 'activo'
-                }
-            });
-            return !!citaExistente;
+            if (!rut_paciente) {
+                throw new Error('El RUT del paciente es requerido');
+            }
+            return CitaRepository_1.default.existsActiveCitaForPaciente(rut_paciente);
         });
     }
-    // Lógica para crear cita como paciente
+    /**
+     * Crea una cita médica desde la perspectiva del paciente
+     * Verifica que el paciente no tenga citas activas antes de crear
+     */
     crearCitaPaciente(citaData) {
         return __awaiter(this, void 0, void 0, function* () {
-            const puedeAgendar = !(yield this.verificarCitasUsuario(citaData.rutPaciente));
-            if (!puedeAgendar) {
-                throw new Error('Ya tienes una cita programada');
+            const { rutPaciente, rutMedico, fecha, hora_inicio, hora_fin, especialidad, idTipoCita } = citaData;
+            // Validaciones
+            if (!rutPaciente || !rutMedico || !fecha || !hora_inicio || !hora_fin || !idTipoCita) {
+                throw new Error('Todos los campos son requeridos');
             }
-            return CitaRepository_1.default.create({
-                rut_paciente: citaData.rutPaciente,
-                rut_medico: citaData.rutMedico,
-                fecha: citaData.fecha,
-                hora_inicio: citaData.hora_inicio,
-                hora_fin: citaData.hora_fin,
+            // Verificar si el paciente ya tiene una cita activa
+            const tieneCitaActiva = yield this.verificarCitasUsuario(rutPaciente);
+            if (tieneCitaActiva) {
+                throw new Error('Ya tienes una cita programada. Debes asistir y terminar tu cita actual para agendar otra.');
+            }
+            // Crear la cita con estado no_pagado
+            const nuevaCita = yield CitaRepository_1.default.create({
+                rut_paciente: rutPaciente,
+                rut_medico: rutMedico,
+                fecha: typeof fecha === 'string' ? new Date(fecha) : fecha,
+                hora_inicio,
+                hora_fin,
                 estado: 'no_pagado',
-                motivo: citaData.especialidad,
-                idTipoCita: citaData.idTipoCita
+                motivo: especialidad,
+                idTipoCita
             });
+            return {
+                idCita: nuevaCita.idCita
+            };
         });
     }
-    // Lógica para actualizar cita
+    /**
+     * Actualiza una cita existente
+     */
     actualizarCita(idCita, citaData) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (!idCita) {
+                throw new Error('El ID de la cita es requerido');
+            }
             const cita = yield CitaRepository_1.default.findByPk(idCita);
-            if (!cita)
+            if (!cita) {
                 throw new Error('Cita no encontrada');
+            }
             return CitaRepository_1.default.update(cita, citaData);
         });
     }
-    // Lógica para eliminar (soft delete) cita
+    /**
+     * Elimina lógicamente una cita (soft delete)
+     */
     eliminarCita(idCita) {
         return __awaiter(this, void 0, void 0, function* () {
+            if (!idCita) {
+                throw new Error('El ID de la cita es requerido');
+            }
             const cita = yield CitaRepository_1.default.findByPk(idCita);
-            if (!cita)
-                throw new Error('Cita no encontrada');
-            return CitaRepository_1.default.update(cita, { estado_actividad: 'inactivo' });
+            if (!cita) {
+                throw new Error('No existe una cita con el id ' + idCita);
+            }
+            yield CitaRepository_1.default.softDelete(idCita);
+            return { mensaje: 'Cita actualizada a inactivo correctamente' };
         });
-    }
-    getDefaultIncludes() {
-        return [
-            { association: 'paciente', attributes: ['nombre', 'apellidos'] },
-            { association: 'medico', attributes: ['nombre', 'apellidos'] },
-            { association: 'tipoCita', attributes: ['especialidad_medica'] }
-        ];
     }
 }
 exports.CitaService = CitaService;
