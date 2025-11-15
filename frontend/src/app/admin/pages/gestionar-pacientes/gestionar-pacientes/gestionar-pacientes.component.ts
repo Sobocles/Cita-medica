@@ -3,10 +3,10 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PacienteService } from '../../services/usuario.service';
 import { Router } from '@angular/router';
 import { Paciente, UsuariosResponse } from '../../interface/paciente';
-import Swal from 'sweetalert2';
 import { BusquedasService } from '../../services/busquedas.service';
 import { AuthService } from '../../../../auth/services/auth.service';
 import { Usuario } from '../../../../medicos/usuarios';
+import { ErrorHandlerService } from '../../../../shared/services/error-handler.service';
 
 @Component({
   selector: 'app-gestionar-pacientes',
@@ -19,7 +19,13 @@ export class GestionarPacientesComponent implements OnInit {
   public desde: number = 0;
   public totalUsuarios: number = 0;
 
-  constructor(private PacienteService: PacienteService, private router: Router, private BusquedasService: BusquedasService, private AuthService: AuthService){}
+  constructor(
+    private PacienteService: PacienteService,
+    private router: Router,
+    private BusquedasService: BusquedasService,
+    private AuthService: AuthService,
+    private errorHandler: ErrorHandlerService
+  ){}
 
   ngOnInit(){
     this.cargaPacientes();
@@ -28,40 +34,49 @@ export class GestionarPacientesComponent implements OnInit {
 
   cargaPacientes() {
     this.PacienteService.cargarPacientes(this.desde)
-      .subscribe((response: UsuariosResponse) => { 
-        this.totalUsuarios = response.total,
-        this.pacientes = response.usuarios 
-
+      .subscribe({
+        next: (response: UsuariosResponse) => {
+          this.totalUsuarios = response.total;
+          this.pacientes = response.usuarios;
+        },
+        error: (err) => {
+          this.errorHandler.showError(err, 'Error al cargar pacientes');
+          this.pacientes = [];
+        }
       });
   }
 
-  borrarPaciente(paciente: Paciente) {
+  async borrarPaciente(paciente: Paciente) {
     if (this.AuthService.usuario.rut === paciente.rut) {
-        Swal.fire('Operación no permitida', 'No puedes eliminarte a ti mismo.', 'error');
-        return;
+      this.errorHandler.showValidationError(
+        'No puedes eliminarte a ti mismo',
+        'Operación no permitida'
+      );
+      return;
     }
 
-    Swal.fire({
-        title: `¿Estás seguro de querer eliminar a ${paciente.nombre}?`,
-        text: "Esta acción eliminara todas las citas agendadas del paciente y sus historiales medicos.",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.value) {
-            this.PacienteService.borrarPaciente(paciente.rut).subscribe(
-                (response) => {
-                    Swal.fire('Eliminado!', response.msg, 'success');
-                    this.cargaPacientes();
-                },
-                (error) => {
-                    Swal.fire('Error', error.error.msg, 'error');
-                }
-            );
-        }
+    const confirmado = await this.errorHandler.showConfirmation(
+      `¿Estás seguro de querer eliminar a ${paciente.nombre}?`,
+      'Esta acción eliminará todas las citas agendadas del paciente y sus historiales médicos',
+      'Sí, eliminar',
+      'Cancelar'
+    );
+
+    if (!confirmado) return;
+
+    this.PacienteService.borrarPaciente(paciente.rut).subscribe({
+      next: (response) => {
+        this.errorHandler.showSuccess(
+          response.msg || 'Paciente eliminado correctamente',
+          '¡Eliminado!'
+        );
+        this.cargaPacientes();
+      },
+      error: (err) => {
+        this.errorHandler.showError(err, 'Error al eliminar paciente');
+      }
     });
-}
+  }
 
   
   
@@ -69,40 +84,47 @@ export class GestionarPacientesComponent implements OnInit {
   cambiarRole(paciente: Paciente) {
     // Verificar si el paciente a editar es el mismo que el usuario autenticado
     if (this.AuthService.usuario.rut === paciente.rut) {
-      Swal.fire(
-        'Operación no permitida',
-        'No puedes cambiar tu propio rol.',
-        'error'
+      this.errorHandler.showValidationError(
+        'No puedes cambiar tu propio rol',
+        'Operación no permitida'
       );
       return; // Detener la ejecución si el usuario intenta cambiar su propio rol
     }
-  
+
     // Si no es el mismo, proceder con la lógica de cambio de rol
-    this.PacienteService.guardarUsuario(paciente)
-      .subscribe(resp => {
+    this.PacienteService.guardarUsuario(paciente).subscribe({
+      next: (resp) => {
         console.log(resp);
-        Swal.fire(
-          'Rol actualizado',
+        this.errorHandler.showSuccess(
           `El rol de ${paciente.nombre} fue actualizado correctamente`,
-          'success'
+          'Rol actualizado'
         );
-      });
+      },
+      error: (err) => {
+        this.errorHandler.showError(err, 'Error al actualizar rol');
+      }
+    });
   }
   
   buscar(termino: string): void {
     console.log(termino);
     if (termino.length === 0) {
-        this.cargaPacientes(); // Recargar todos los pacientes si la búsqueda está vacía
-        return;
+      this.cargaPacientes(); // Recargar todos los pacientes si la búsqueda está vacía
+      return;
     }
 
-    this.BusquedasService.buscar('usuarios', termino)
-    .subscribe(resp => {
-      console.log("Respuesta completa:", resp);
-      this.pacientes = resp; // Asignar los resultados de la búsqueda
-      console.log("this.pacientes después de asignar:", this.pacientes);
-    });           
-}
+    this.BusquedasService.buscar('usuarios', termino).subscribe({
+      next: (resp) => {
+        console.log("Respuesta completa:", resp);
+        this.pacientes = resp; // Asignar los resultados de la búsqueda
+        console.log("this.pacientes después de asignar:", this.pacientes);
+      },
+      error: (err) => {
+        this.errorHandler.showError(err, 'Error al buscar pacientes');
+        this.pacientes = [];
+      }
+    });
+  }
 
 editarUsuario(usuario: any) {
   console.log('este paciente',usuario);

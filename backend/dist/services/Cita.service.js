@@ -21,8 +21,8 @@ class CitaService {
     /**
      * Obtiene todas las citas activas (excluyendo no pagadas) con paginación
      */
-    getCitas() {
-        return __awaiter(this, arguments, void 0, function* (desde = 0, limite = 5) {
+    getCitas(desde = 0, limite = 5) {
+        return __awaiter(this, void 0, void 0, function* () {
             const totalCitas = yield CitaRepository_1.default.countActiveCitasExcludingNoPagado();
             const citas = yield CitaRepository_1.default.findActiveCitasWithRelations(desde, limite);
             return {
@@ -34,8 +34,8 @@ class CitaService {
     /**
      * Obtiene las citas de un médico específico con paginación
      */
-    getCitasMedico(rut_medico_1) {
-        return __awaiter(this, arguments, void 0, function* (rut_medico, desde = 0, limite = 5) {
+    getCitasMedico(rut_medico, desde = 0, limite = 5) {
+        return __awaiter(this, void 0, void 0, function* () {
             if (!rut_medico) {
                 throw new Error('El RUT del médico es requerido');
             }
@@ -53,8 +53,8 @@ class CitaService {
     /**
      * Obtiene las citas de un paciente específico con paginación
      */
-    getCitasPaciente(rut_paciente_1) {
-        return __awaiter(this, arguments, void 0, function* (rut_paciente, desde = 0, limite = 5) {
+    getCitasPaciente(rut_paciente, desde = 0, limite = 5) {
+        return __awaiter(this, void 0, void 0, function* () {
             if (!rut_paciente) {
                 throw new Error('El RUT del paciente es requerido');
             }

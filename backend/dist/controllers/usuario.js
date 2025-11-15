@@ -12,131 +12,163 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getPacientesConCitasPagadasYEnCursoYterminado = exports.getPacientesConCitasPagadasYEnCurso = exports.cambiarPassword = exports.deleteUsuario = exports.putUsuario = exports.getUsuario = exports.CrearUsuario = exports.getAllUsuarios = exports.getUsuarios = void 0;
+exports.getPacientesConCitasPagadasYEnCursoYterminado = exports.getPacientesConCitasPagadasYEnCurso = exports.cambiarPassword = exports.deleteUsuario = exports.putUsuario = exports.CrearUsuario = exports.getUsuario = exports.getAllUsuarios = exports.getUsuarios = void 0;
 const usuario_service_1 = __importDefault(require("../services/usuario.service"));
-const usuario_repository_1 = __importDefault(require("../repositories/usuario.repository"));
+const response_helper_1 = __importDefault(require("../helpers/response.helper"));
+/**
+ * Controlador para manejar las peticiones HTTP relacionadas con usuarios
+ * RESPONSABILIDAD: Solo manejar request/response, delegar lógica al servicio
+ */
+/**
+ * Obtiene usuarios paginados
+ */
 const getUsuarios = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const desde = Number(req.query.desde) || 0;
     try {
+        const desde = Number(req.query.desde) || 0;
         const result = yield usuario_service_1.default.getPaginatedUsers(desde);
-        res.json(result);
+        return response_helper_1.default.successWithCustomData(res, result);
     }
     catch (error) {
-        res.status(500).send('Error interno del servidor');
+        console.error('Error al obtener usuarios:', error);
+        return response_helper_1.default.serverError(res, 'Error al obtener usuarios', error);
     }
 });
 exports.getUsuarios = getUsuarios;
+/**
+ * Obtiene todos los pacientes (no administradores)
+ */
 const getAllUsuarios = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const pacientes = yield usuario_service_1.default.getAllPatients();
-        res.json({
-            ok: true,
+        return response_helper_1.default.successWithCustomData(res, {
             usuarios: pacientes,
             total: pacientes.length
         });
     }
     catch (error) {
-        res.status(500).send('Error interno del servidor');
+        console.error('Error al obtener pacientes:', error);
+        return response_helper_1.default.serverError(res, 'Error al obtener pacientes', error);
     }
 });
 exports.getAllUsuarios = getAllUsuarios;
-const CrearUsuario = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("ENTRO EN CREAR USUARIO");
-    try {
-        const user = yield usuario_service_1.default.createUser(req.body);
-        res.json({
-            ok: true,
-            usuario: user
-        });
-        console.log("Usuario creado");
-    }
-    catch (error) {
-        res.status(400).json({
-            ok: false,
-            msg: error.message
-        });
-    }
-});
-exports.CrearUsuario = CrearUsuario;
+/**
+ * Obtiene un usuario por su ID
+ */
 const getUsuario = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.params;
     try {
-        const usuario = yield usuario_repository_1.default.findById(id);
-        if (!usuario) {
-            return res.status(404).json({ msg: 'Usuario no encontrado' });
-        }
-        res.json(usuario);
+        const { id } = req.params;
+        const usuario = yield usuario_service_1.default.getUserById(id);
+        return response_helper_1.default.successWithCustomData(res, { usuario });
     }
     catch (error) {
-        res.status(500).send('Error interno del servidor');
+        console.error('Error al obtener usuario:', error);
+        if (error.message === 'Usuario no encontrado') {
+            return response_helper_1.default.notFound(res, error.message);
+        }
+        return response_helper_1.default.serverError(res, 'Error al obtener usuario', error);
     }
 });
 exports.getUsuario = getUsuario;
-const putUsuario = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.params;
+/**
+ * Crea un nuevo usuario
+ */
+const CrearUsuario = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const usuario = yield usuario_service_1.default.updateUser(id, req.body);
-        if (!usuario) {
-            return res.status(404).json({ ok: false, msg: 'Usuario no encontrado' });
-        }
-        res.json({ usuario });
+        const user = yield usuario_service_1.default.createUser(req.body);
+        return response_helper_1.default.successWithCustomData(res, { usuario: user });
     }
     catch (error) {
-        res.status(400).json({ ok: false, msg: error.message });
+        console.error('Error al crear usuario:', error);
+        return response_helper_1.default.badRequest(res, error.message);
+    }
+});
+exports.CrearUsuario = CrearUsuario;
+/**
+ * Actualiza un usuario existente
+ */
+const putUsuario = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { id } = req.params;
+        const usuario = yield usuario_service_1.default.updateUser(id, req.body);
+        return response_helper_1.default.successWithCustomData(res, { usuario });
+    }
+    catch (error) {
+        console.error('Error al actualizar usuario:', error);
+        if (error.message === 'Usuario no encontrado') {
+            return response_helper_1.default.notFound(res, error.message);
+        }
+        return response_helper_1.default.badRequest(res, error.message);
     }
 });
 exports.putUsuario = putUsuario;
+/**
+ * Elimina un usuario (soft delete) y sus relaciones
+ */
 const deleteUsuario = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { id } = req.params;
     try {
+        const { id } = req.params;
         yield usuario_service_1.default.deleteUser(id);
-        res.json({ msg: 'Usuario eliminado correctamente' });
+        return response_helper_1.default.success(res, undefined, 'Usuario eliminado correctamente');
     }
     catch (error) {
-        res.status(400).json({ ok: false, msg: error.message });
+        console.error('Error al eliminar usuario:', error);
+        if (error.message === 'Usuario no encontrado') {
+            return response_helper_1.default.notFound(res, error.message);
+        }
+        return response_helper_1.default.badRequest(res, error.message);
     }
 });
 exports.deleteUsuario = deleteUsuario;
+/**
+ * Cambia la contraseña de un usuario
+ */
 const cambiarPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { rut, password, newPassword } = req.body;
     try {
+        const { rut, password, newPassword } = req.body;
         yield usuario_service_1.default.changePassword(rut, password, newPassword);
-        res.json({ ok: true, msg: 'Contraseña actualizada correctamente' });
+        return response_helper_1.default.success(res, undefined, 'Contraseña actualizada correctamente');
     }
     catch (error) {
-        res.status(400).json({ ok: false, msg: error.message });
+        console.error('Error al cambiar contraseña:', error);
+        return response_helper_1.default.badRequest(res, error.message);
     }
 });
 exports.cambiarPassword = cambiarPassword;
+/**
+ * Obtiene pacientes con citas en estados específicos para un médico
+ */
 const getPacientesConCitasPagadasYEnCurso = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { rut_medico } = req.params;
     try {
+        const { rut_medico } = req.params;
         const pacientes = yield usuario_service_1.default.getPatientsWithAppointments(rut_medico, ['en_curso', 'pagado', 'terminado']);
-        res.json({
-            ok: true,
+        return response_helper_1.default.successWithCustomData(res, {
             usuarios: pacientes,
             total: pacientes.length
         });
     }
     catch (error) {
-        res.status(500).send('Error interno del servidor');
+        console.error('Error al obtener pacientes con citas:', error);
+        return response_helper_1.default.serverError(res, 'Error al obtener pacientes con citas', error);
     }
 });
 exports.getPacientesConCitasPagadasYEnCurso = getPacientesConCitasPagadasYEnCurso;
+/**
+ * Obtiene pacientes con citas pagadas, en curso y terminadas
+ * (Duplicado del anterior - considera consolidar)
+ */
 const getPacientesConCitasPagadasYEnCursoYterminado = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { rut_medico } = req.params;
     try {
+        const { rut_medico } = req.params;
         const pacientes = yield usuario_service_1.default.getPatientsWithAppointments(rut_medico, ['en_curso', 'pagado', 'terminado']);
-        res.json({
-            ok: true,
+        return response_helper_1.default.successWithCustomData(res, {
             usuarios: pacientes,
             total: pacientes.length
         });
     }
     catch (error) {
-        res.status(500).send('Error interno del servidor');
+        console.error('Error al obtener pacientes con citas:', error);
+        return response_helper_1.default.serverError(res, 'Error al obtener pacientes con citas', error);
     }
 });
 exports.getPacientesConCitasPagadasYEnCursoYterminado = getPacientesConCitasPagadasYEnCursoYterminado;
-// Controladores para las consultas específicas de pacientes...
 //# sourceMappingURL=usuario.js.map

@@ -20,8 +20,8 @@ class Email {
     }
     constructor() {
         this.transporter = nodemailer_1.default.createTransport({
-            host: "smtp.gmail.com", //enviara correos a cuentas tipo gmail
-            port: 465, //numero por defecto
+            host: "smtp.gmail.com",
+            port: 465,
             secure: true,
             auth: {
                 user: 'smoralespincheira@gmail.com',
@@ -38,7 +38,7 @@ class Email {
     enviarEmail(email, nombre, passwordNew) {
         return __awaiter(this, void 0, void 0, function* () {
             return yield this.transporter.sendMail({
-                from: '"Recuperacion de contraseña" <smoralespincheira@gmail.com>', //este es el email del administrador que le envia la contraseña al usuario de forma automatica
+                from: '"Recuperacion de contraseña" <smoralespincheira@gmail.com>',
                 to: email,
                 subject: 'Recuperacion de contraseña',
                 html: `<b>Su nombre es: ${nombre} y su nueva contraseña es: ${passwordNew}. Por favor cambie su contraseña una vez que ingrese.</b>` //se le envia la contraseña nueva

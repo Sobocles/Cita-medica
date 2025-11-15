@@ -2,9 +2,9 @@ import { Component } from '@angular/core';
 import { Historial, HistorialResponse } from '../historial';
 import { HistorialService } from '../services/historial.service';
 import { AuthService } from 'src/app/auth/services/auth.service';
-import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { BusquedasService } from '../../admin/pages/services/busquedas.service';
+import { ErrorHandlerService } from '../../shared/services/error-handler.service';
 
 @Component({
   selector: 'app-gestionar-historiales',
@@ -18,7 +18,13 @@ export class GestionarHistorialesComponent {
   public desde: number = 0;
   public totalHistoriales: number = 0;
 
-  constructor(private HistorialService: HistorialService, private authservice: AuthService, private router: Router, private BusquedasService: BusquedasService){}
+  constructor(
+    private HistorialService: HistorialService,
+    private authservice: AuthService,
+    private router: Router,
+    private BusquedasService: BusquedasService,
+    private errorHandler: ErrorHandlerService
+  ){}
 
   ngOnInit() {
     if (this.authservice.medico && this.authservice.medico.rut) { 
@@ -32,16 +38,19 @@ export class GestionarHistorialesComponent {
 buscar(termino: string): void {
   console.log(termino);
   if (termino.length === 0) {
-      this.cargarHistorialMedico(this.authservice.medico.rut); // Recargar todos los pacientes si la búsqueda está vacía
-      return;
+    this.cargarHistorialMedico(this.authservice.medico.rut); // Recargar todos los pacientes si la búsqueda está vacía
+    return;
   }
 
-  this.BusquedasService.buscar('historiales', termino)
-  .subscribe(resp => {
-    
-    this.historiales = resp.citas; // Asignar los resultados de la búsqueda
-    
-  });           
+  this.BusquedasService.buscar('historiales', termino).subscribe({
+    next: (resp) => {
+      this.historiales = resp.citas; // Asignar los resultados de la búsqueda
+    },
+    error: (err) => {
+      this.errorHandler.showError(err, 'Error al buscar historiales');
+      this.historiales = [];
+    }
+  });
 }
 
 cambiarPagina( valor: number ) { 
@@ -56,18 +65,18 @@ cambiarPagina( valor: number ) {
 }
 
 cargarHistorialMedico(rut: string): void {
-    this.HistorialService.obtenerHistorialPorIdMedico(rut, this.desde).subscribe(
-      (resp: any) => {
-      
+    this.HistorialService.obtenerHistorialPorIdMedico(rut, this.desde).subscribe({
+      next: (resp: any) => {
         this.historiales = resp.historiales;
         console.log('aqui el arreglo de historiales',this.historiales);
         this.totalHistoriales = resp.total;
- 
       },
-      (err) => {
+      error: (err) => {
         console.error('Error al cargar historiales:', err);
+        this.errorHandler.showError(err, 'Error al cargar historiales');
+        this.historiales = [];
       }
-    );
+    });
   }
 
   editarHistorial(historial: any) {
@@ -75,31 +84,27 @@ cargarHistorialMedico(rut: string): void {
     this.router.navigate(['/editar-historial', historial.id_historial]);
   }
 
-  borrarHistorial( historial: any ) {
+  async borrarHistorial(historial: any) {
+    const confirmado = await this.errorHandler.showConfirmation(
+      '¿Borrar Historial?',
+      `Está a punto de borrar el historial número ${historial.id_historial}. ¿Está seguro que desea borrarlo?`,
+      'Sí, borrarlo',
+      'Cancelar'
+    );
 
-    Swal.fire({
-      title: '¿Borrar Historial?',
-      text: `Esta a punto de borrar el historial numero ${ historial.id_historial }, ¿Esta seguro que desea borrarlo?`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Si, borrarlo'
-    }).then((result) => {
-      if (result.value) {
-        
-        this.HistorialService.borrarHistorial( historial.id_historial )
-          .subscribe( resp => {
-            
-            this.cargarHistorialMedico(this.authservice.medico.rut);
-            Swal.fire(
-              'Historial borrado',
-              `El historial ${ historial.id_historial } fue eliminado correctamente`,
-              'success'
-            );
-            
-          });
+    if (!confirmado) return;
 
+    this.HistorialService.borrarHistorial(historial.id_historial).subscribe({
+      next: (resp) => {
+        this.errorHandler.showSuccess(
+          `El historial ${historial.id_historial} fue eliminado correctamente`,
+          'Historial borrado'
+        );
+        this.cargarHistorialMedico(this.authservice.medico.rut);
+      },
+      error: (err) => {
+        this.errorHandler.showError(err, 'Error al eliminar historial');
       }
-    })
-
+    });
   }
 }

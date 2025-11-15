@@ -14,46 +14,68 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TipoCitaService = void 0;
 const TipoCitaRepository_1 = __importDefault(require("../repositories/TipoCitaRepository"));
+const medico_repository_1 = __importDefault(require("../repositories/medico.repository"));
+const CitaRepository_1 = __importDefault(require("../repositories/CitaRepository"));
+const HorarioMedicoRepository_1 = __importDefault(require("../repositories/HorarioMedicoRepository"));
 const sequelize_1 = require("sequelize");
-const medico_1 = __importDefault(require("../models/medico"));
-const cita_medica_1 = __importDefault(require("../models/cita_medica"));
-const horario_medico_1 = __importDefault(require("../models/horario_medico"));
-const connection_1 = __importDefault(require("../db/connection"));
+/**
+ * Servicio para manejar la lógica de negocio de tipos de cita
+ */
 class TipoCitaService {
-    // Métodos para especialidades
+    /**
+     * Obtiene todas las especialidades médicas activas
+     */
     getAllEspecialidades() {
         return __awaiter(this, void 0, void 0, function* () {
             return TipoCitaRepository_1.default.findActiveEspecialidades();
         });
     }
+    /**
+     * Obtiene especialidades disponibles que tienen médicos activos con horarios
+     * Una especialidad está "disponible" si:
+     * - Existe en tipocitas como activa
+     * - Tiene al menos un médico activo con esa especialidad
+     * - Ese médico tiene horarios configurados
+     */
     getEspecialidadesDisponibles() {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const query = `
-        SELECT DISTINCT tc.especialidad_medica
-        FROM tipocitas tc
-        WHERE tc.estado = 'activo' 
-        AND tc.especialidad_medica IS NOT NULL
-        AND tc.especialidad_medica != ''
-        AND EXISTS (
-          SELECT 1 
-          FROM medicos m 
-          INNER JOIN horarioMedicos hm ON m.rut = hm.rut_medico
-          WHERE m.estado = 'activo'
-          AND m.especialidad_medica = tc.especialidad_medica
-        )
-        ORDER BY tc.especialidad_medica
-      `;
-                const [results] = yield connection_1.default.query(query);
-                return results;
+                // Obtener todas las especialidades activas
+                const todasEspecialidades = yield TipoCitaRepository_1.default.getEspecialidadesArray();
+                // Filtrar solo las que tienen médicos activos con horarios
+                const especialidadesConMedicos = [];
+                for (const especialidad of todasEspecialidades) {
+                    // Buscar médicos activos con esta especialidad que tengan horarios
+                    const medicosConHorarios = yield medico_repository_1.default.findAll({
+                        where: {
+                            especialidad_medica: especialidad,
+                            estado: 'activo'
+                        },
+                        include: [{
+                                association: 'HorarioMedics',
+                                required: true,
+                                attributes: ['idHorario']
+                            }],
+                        attributes: ['rut'],
+                        limit: 1 // Solo necesitamos saber si existe al menos uno
+                    });
+                    if (medicosConHorarios.length > 0) {
+                        especialidadesConMedicos.push({ especialidad_medica: especialidad });
+                    }
+                }
+                return especialidadesConMedicos;
             }
             catch (error) {
                 console.error("Error getting available specialties", error);
-                return this.getAllEspecialidades();
+                // Fallback: retornar todas las especialidades activas
+                const especialidades = yield this.getAllEspecialidades();
+                return especialidades.map(e => ({ especialidad_medica: e.especialidad_medica }));
             }
         });
     }
-    // Métodos CRUD para tipos de cita
+    /**
+     * Obtiene tipos de cita activos con paginación
+     */
     getTipoCitas(desde, limite) {
         return __awaiter(this, void 0, void 0, function* () {
             return TipoCitaRepository_1.default.findAndCountAll({
@@ -63,14 +85,25 @@ class TipoCitaService {
             });
         });
     }
+    /**
+     * Obtiene un tipo de cita por su ID
+     */
     getTipoCita(id) {
         return __awaiter(this, void 0, void 0, function* () {
-            return TipoCitaRepository_1.default.findByPk(id);
+            const tipoCita = yield TipoCitaRepository_1.default.findByPk(id);
+            if (!tipoCita) {
+                throw new Error('Tipo de cita no encontrado');
+            }
+            return tipoCita;
         });
     }
+    /**
+     * Crea un nuevo tipo de cita con validaciones
+     */
     crearTipoCita(tipoCitaData) {
         return __awaiter(this, void 0, void 0, function* () {
             const normalizedData = Object.assign(Object.assign({}, tipoCitaData), { especialidad_medica: this.normalizarEspecialidad(tipoCitaData.especialidad_medica || '') });
+            // Verificar que no exista una especialidad activa con el mismo nombre
             const exists = yield TipoCitaRepository_1.default.findOne({
                 where: {
                     especialidad_medica: normalizedData.especialidad_medica,
@@ -83,65 +116,75 @@ class TipoCitaService {
             return TipoCitaRepository_1.default.create(normalizedData);
         });
     }
+    /**
+     * Actualiza un tipo de cita existente
+     */
     actualizarTipoCita(id, tipoCitaData) {
         return __awaiter(this, void 0, void 0, function* () {
             const tipoCita = yield TipoCitaRepository_1.default.findByPk(id);
-            if (!tipoCita)
+            if (!tipoCita) {
                 throw new Error('Tipo de cita no encontrado');
+            }
             return TipoCitaRepository_1.default.update(id, tipoCitaData);
         });
     }
+    /**
+     * Elimina (desactiva) un tipo de cita y sus elementos relacionados
+     * IMPORTANTE: También desactiva médicos, citas y horarios relacionados
+     */
     eliminarTipoCita(id) {
         return __awaiter(this, void 0, void 0, function* () {
             const tipoCita = yield TipoCitaRepository_1.default.desactivar(id);
-            if (!tipoCita)
+            if (!tipoCita) {
                 throw new Error('Tipo de cita no encontrado');
+            }
+            // Si el tipo de cita tiene especialidad, desactivar elementos relacionados
             if (tipoCita.especialidad_medica) {
-                yield this.eliminarHorariosPorEspecialidad(tipoCita.especialidad_medica);
+                yield this.desactivarElementosRelacionados(tipoCita.especialidad_medica);
             }
             return tipoCita;
         });
     }
-    eliminarHorariosPorEspecialidad(especialidad) {
+    /**
+     * Desactiva médicos, citas y horarios relacionados con una especialidad
+     * @private
+     */
+    desactivarElementosRelacionados(especialidad) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                // 1. Desactivar médicos
-                yield medico_1.default.update({ estado: 'inactivo' }, { where: { especialidad_medica: especialidad } });
-                // 2. Actualizar citas
-                yield cita_medica_1.default.update({ estado_actividad: 'inactivo' }, {
-                    where: {
-                        rut_medico: {
-                            [sequelize_1.Op.in]: sequelize_1.Sequelize.literal(`(SELECT rut FROM medicos WHERE especialidad_medica = '${especialidad}')`)
-                        },
-                        estado: { [sequelize_1.Op.in]: ['terminado', 'no_pagado', 'no_asistio'] }
-                    }
+                // 1. Obtener médicos con esta especialidad
+                const medicos = yield medico_repository_1.default.findAll({
+                    where: { especialidad_medica: especialidad },
+                    attributes: ['rut']
                 });
-                // 3. Eliminar horarios
-                const horarios = yield horario_medico_1.default.findAll({
-                    attributes: ['idHorario'],
-                    include: [{
-                            model: medico_1.default,
-                            as: 'medico',
-                            where: { especialidad_medica: especialidad }
-                        }]
-                });
-                const ids = horarios.map(h => h.idHorario);
-                if (ids.length > 0) {
-                    yield horario_medico_1.default.destroy({
-                        where: {
-                            idHorario: {
-                                [sequelize_1.Op.in]: ids
-                            }
-                        }
-                    });
+                if (medicos.length === 0) {
+                    return; // No hay médicos con esta especialidad
+                }
+                const rutsMedicos = medicos.map(m => m.rut);
+                // 2. Desactivar médicos con esta especialidad
+                yield medico_repository_1.default.updateWhere({ especialidad_medica: especialidad }, { estado: 'inactivo' });
+                // 3. Desactivar citas de estos médicos en estados específicos
+                yield CitaRepository_1.default.updateWhere({
+                    rut_medico: { [sequelize_1.Op.in]: rutsMedicos },
+                    estado: { [sequelize_1.Op.in]: ['terminado', 'no_pagado', 'no_asistio'] }
+                }, { estado_actividad: 'inactivo' });
+                // 4. Eliminar horarios de estos médicos
+                for (const rut of rutsMedicos) {
+                    yield HorarioMedicoRepository_1.default.destroyByMedico(rut);
                 }
             }
             catch (error) {
-                console.error("Error eliminando horarios por especialidad", error);
-                throw new Error('Error al desactivar elementos relacionados');
+                console.error("Error desactivando elementos relacionados con especialidad", error);
+                throw new Error('Error al desactivar elementos relacionados con la especialidad');
             }
         });
     }
+    /**
+     * Normaliza el nombre de una especialidad
+     * - Remueve acentos
+     * - Convierte a minúsculas
+     * @private
+     */
     normalizarEspecialidad(especialidad) {
         return especialidad
             .normalize("NFD")

@@ -14,31 +14,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HorarioMedicoService = void 0;
 const HorarioMedicoRepository_1 = __importDefault(require("../repositories/HorarioMedicoRepository"));
-const medico_1 = __importDefault(require("../models/medico"));
+/**
+ * Servicio para manejar la lógica de negocio de horarios médicos
+ */
 class HorarioMedicoService {
-    // Obtener todos los horarios médicos con paginación
+    /**
+     * Obtiene todos los horarios médicos con información del médico y paginación
+     */
     getHorariosMedicos(desde, limite) {
         return __awaiter(this, void 0, void 0, function* () {
-            const include = [{
-                    model: medico_1.default,
-                    as: 'medico',
-                    attributes: ['nombre', 'apellidos', 'especialidad_medica'],
-                    where: { estado: 'activo' }
-                }];
-            return HorarioMedicoRepository_1.default.findAll({
-                include,
-                offset: desde,
-                limit: limite
-            });
+            return HorarioMedicoRepository_1.default.findAllWithMedico(desde, limite);
         });
     }
-    // Obtener un horario médico por su ID
+    /**
+     * Obtiene un horario médico por su ID
+     */
     getHorarioMedico(idHorario) {
         return __awaiter(this, void 0, void 0, function* () {
             return HorarioMedicoRepository_1.default.findByPk(idHorario);
         });
     }
-    // Crear un nuevo horario médico con validación de solapamiento
+    /**
+     * Crea un nuevo horario médico con validación de solapamiento
+     */
     crearHorarioMedico(horarioData) {
         return __awaiter(this, void 0, void 0, function* () {
             const { rut_medico, diaSemana, horaInicio, horaFinalizacion } = horarioData;
@@ -50,7 +48,9 @@ class HorarioMedicoService {
             return HorarioMedicoRepository_1.default.create(horarioData);
         });
     }
-    // Actualizar un horario médico existente
+    /**
+     * Actualiza un horario médico existente con validación de solapamiento
+     */
     actualizarHorarioMedico(idHorario, horarioData) {
         return __awaiter(this, void 0, void 0, function* () {
             const horario = yield HorarioMedicoRepository_1.default.findByPk(idHorario);
@@ -65,7 +65,9 @@ class HorarioMedicoService {
             return HorarioMedicoRepository_1.default.update(horario, horarioData);
         });
     }
-    // Eliminar un horario médico
+    /**
+     * Elimina un horario médico
+     */
     eliminarHorarioMedico(idHorario) {
         return __awaiter(this, void 0, void 0, function* () {
             const horario = yield HorarioMedicoRepository_1.default.findByPk(idHorario);

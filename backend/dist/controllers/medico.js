@@ -15,77 +15,92 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const medico_service_1 = __importDefault(require("../services/medico.service"));
 const jwt_1 = __importDefault(require("../helpers/jwt"));
 const enums_1 = require("../types/enums");
+const response_helper_1 = __importDefault(require("../helpers/response.helper"));
+/**
+ * Controlador para manejar las peticiones HTTP relacionadas con médicos
+ * RESPONSABILIDAD: Solo manejar request/response, delegar lógica al servicio
+ */
 class MedicosController {
     static get instance() {
         return this._instance || (this._instance = new MedicosController());
     }
+    /**
+     * Obtiene médicos paginados
+     */
     getMedicos(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const desde = Number(req.query.desde) || 0;
             try {
+                const desde = Number(req.query.desde) || 0;
                 const result = yield medico_service_1.default.getPaginatedMedicos(desde);
-                res.json({
-                    ok: true,
+                return response_helper_1.default.successWithCustomData(res, {
                     medicos: result.medicos,
                     total: result.total
                 });
             }
             catch (error) {
                 console.error('Error al obtener los médicos:', error);
-                res.status(500).json({ msg: 'Error en el servidor' });
+                return response_helper_1.default.serverError(res, 'Error al obtener médicos', error);
             }
         });
     }
+    /**
+     * Obtiene médicos filtrados por especialidades activas
+     */
     getMedicosEspecialidad(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const medicos = yield medico_service_1.default.getMedicosByEspecialidad();
-                res.json({
-                    ok: true,
-                    medicos
-                });
+                return response_helper_1.default.successWithCustomData(res, { medicos });
             }
             catch (error) {
                 console.error('Error al obtener médicos por especialidad:', error);
-                res.status(500).json({ ok: false, msg: 'Error en el servidor' });
+                return response_helper_1.default.serverError(res, 'Error al obtener médicos por especialidad', error);
             }
         });
     }
+    /**
+     * Obtiene todos los médicos activos sin paginación
+     */
     getAllMedicos(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 const result = yield medico_service_1.default.getAllMedicos();
-                res.json({
-                    ok: true,
+                return response_helper_1.default.successWithCustomData(res, {
                     medicos: result.medicos,
                     total: result.total
                 });
             }
             catch (error) {
-                console.error(error);
-                res.status(500).json({ msg: 'Error en el servidor' });
+                console.error('Error al obtener todos los médicos:', error);
+                return response_helper_1.default.serverError(res, 'Error al obtener todos los médicos', error);
             }
         });
     }
+    /**
+     * Obtiene un médico por su RUT
+     */
     getMedico(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { id } = req.params;
             try {
+                const { id } = req.params;
                 const medico = yield medico_service_1.default.getMedicoById(id);
-                if (!medico) {
-                    return res.status(404).json({ ok: false, msg: 'Médico no encontrado' });
-                }
-                res.json({ ok: true, medico });
+                return response_helper_1.default.successWithCustomData(res, { medico });
             }
             catch (error) {
-                console.log(error);
-                res.status(500).json({ ok: false, msg: 'Hable con el administrador' });
+                console.error('Error al obtener médico:', error);
+                if (error.message === 'Médico no encontrado') {
+                    return response_helper_1.default.notFound(res, error.message);
+                }
+                return response_helper_1.default.serverError(res, 'Error al obtener médico', error);
             }
         });
     }
+    /**
+     * Crea un nuevo médico y genera su JWT
+     */
     crearMedico(req, res) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
             try {
                 const medico = yield medico_service_1.default.createMedico(req.body);
                 // Para el token, necesitamos el rol como string
@@ -93,58 +108,76 @@ class MedicosController {
                 const rol = ((_a = medicoJSON.rol) === null || _a === void 0 ? void 0 : _a.codigo) || enums_1.UserRole.MEDICO;
                 // Generar JWT
                 const token = yield jwt_1.default.instance.generarJWT(medico.rut, medico.nombre, medico.apellidos, rol);
-                res.json({
-                    ok: true,
+                return response_helper_1.default.successWithCustomData(res, {
                     medico: medicoJSON,
                     token
                 });
             }
             catch (error) {
-                res.status(400).json({ ok: false, msg: error.message });
+                console.error('Error al crear médico:', error);
+                return response_helper_1.default.badRequest(res, error.message);
             }
         });
     }
+    /**
+     * Actualiza un médico existente
+     */
     putMedico(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { rut } = req.params;
             try {
+                const { rut } = req.params;
                 const medico = yield medico_service_1.default.updateMedico(rut, req.body);
-                if (!medico) {
-                    return res.status(404).json({ ok: false, msg: 'Médico no encontrado' });
-                }
                 // Procesar para respuesta
                 const medicoJSON = medico.toJSON();
                 if (medicoJSON.rol && medicoJSON.rol.codigo) {
                     medicoJSON.rol = medicoJSON.rol.codigo;
                 }
-                res.json({ ok: true, medico: medicoJSON });
+                return response_helper_1.default.successWithCustomData(res, { medico: medicoJSON });
             }
             catch (error) {
-                res.status(400).json({ ok: false, msg: error.message });
+                console.error('Error al actualizar médico:', error);
+                if (error.message === 'Médico no encontrado') {
+                    return response_helper_1.default.notFound(res, error.message);
+                }
+                return response_helper_1.default.badRequest(res, error.message);
             }
         });
     }
+    /**
+     * Elimina un médico (soft delete) y sus relaciones
+     */
     deleteMedico(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { rut } = req.params;
             try {
+                const { rut } = req.params;
                 yield medico_service_1.default.deleteMedico(rut);
-                res.json({ ok: true, msg: 'Médico eliminado correctamente' });
+                return response_helper_1.default.success(res, undefined, 'Médico eliminado correctamente');
             }
             catch (error) {
-                res.status(400).json({ ok: false, msg: error.message });
+                console.error('Error al eliminar médico:', error);
+                if (error.message === 'Médico no encontrado') {
+                    return response_helper_1.default.notFound(res, error.message);
+                }
+                return response_helper_1.default.badRequest(res, error.message);
             }
         });
     }
+    /**
+     * Cambia la contraseña de un médico
+     */
     cambiarPasswordMedico(req, res) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { rut, password, newPassword } = req.body;
             try {
+                const { rut, password, newPassword } = req.body;
                 yield medico_service_1.default.changePassword(rut, password, newPassword);
-                res.json({ ok: true, msg: 'Contraseña actualizada correctamente' });
+                return response_helper_1.default.success(res, undefined, 'Contraseña actualizada correctamente');
             }
             catch (error) {
-                res.status(400).json({ ok: false, msg: error.message });
+                console.error('Error al cambiar contraseña:', error);
+                if (error.message === 'Médico no encontrado') {
+                    return response_helper_1.default.notFound(res, error.message);
+                }
+                return response_helper_1.default.badRequest(res, error.message);
             }
         });
     }

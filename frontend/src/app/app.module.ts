@@ -5,13 +5,14 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { SharedModule } from './shared/shared.module';
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientModule, HTTP_INTERCEPTORS } from '@angular/common/http';
 
 import { PacientesModule } from './pacientes/pacientes.module';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { MedicosModule } from './medicos/medicos.module';
 import { AdminModule } from './admin/admin.module';
+import { HttpErrorInterceptor } from './shared/interceptors/http-error.interceptor';
 
 
 @NgModule({
@@ -34,7 +35,13 @@ import { AdminModule } from './admin/admin.module';
     MedicosModule
 
   ],
-  providers: [],
+  providers: [
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: HttpErrorInterceptor,
+      multi: true
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

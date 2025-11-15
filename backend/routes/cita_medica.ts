@@ -1,59 +1,66 @@
 import { Router } from 'express';
 import CitaMedica from '../controllers/cita_medica';
-
 import validarCampos from '../middlewares/validar-campos';
 import ValidarJwt from '../middlewares/validar-jwt';
-
+import {
+  crearCitaValidators,
+  crearCitaPacienteValidators,
+  updateCitaValidators,
+  deleteCitaValidators,
+  getCitaValidators,
+  getCitasMedicoValidators,
+  getCitasPacienteValidators,
+  getCitasPaginationValidators
+} from '../middlewares/validators/cita.validators';
 
 const router = Router();
 
-router.get('/',[
+// Obtener todas las citas con paginación
+router.get('/', [
+  ...getCitasPaginationValidators,
+  validarCampos.instance.validarCampos
+], CitaMedica.instance.getCitas);
 
-  
-    validarCampos.instance.validarCampos
-], CitaMedica.instance.getCitas );
-
-
-
+// Obtener una cita con factura
 router.get('/:idCita', [
-  
-    validarCampos.instance.validarCampos
-], CitaMedica.instance.getCitaFactura );
+  ...getCitaValidators,
+  validarCampos.instance.validarCampos
+], CitaMedica.instance.getCitaFactura);
 
+// Obtener citas de un médico
 router.get('/medico/:rut_medico', [
-  
-    validarCampos.instance.validarCampos
-], CitaMedica.instance.getCitasMedico );
+  ...getCitasMedicoValidators,
+  validarCampos.instance.validarCampos
+], CitaMedica.instance.getCitasMedico);
 
+// Obtener citas de un paciente
 router.get('/usuario/:rut_paciente', [
-  
-    validarCampos.instance.validarCampos
-], CitaMedica.instance.getCitasPaciente );
+  ...getCitasPacienteValidators,
+  validarCampos.instance.validarCampos
+], CitaMedica.instance.getCitasPaciente);
 
-
+// Crear una cita
 router.post('/', [
-    
-    validarCampos.instance.validarCampos
-], CitaMedica.instance.crearCita );
+  ...crearCitaValidators,
+  validarCampos.instance.validarCampos
+], CitaMedica.instance.crearCita);
 
+// Crear una cita como paciente
 router.post('/crearCitapaciente', [
-    
-    validarCampos.instance.validarCampos
-], CitaMedica.instance.crearCitaPaciente );
+  ...crearCitaPacienteValidators,
+  validarCampos.instance.validarCampos
+], CitaMedica.instance.crearCitaPaciente);
 
-router.put('/:id',
-    [
-       
-    validarCampos.instance.validarCampos
-    ], CitaMedica.instance.putCita
-    
- );
+// Actualizar una cita
+router.put('/:id', [
+  ...updateCitaValidators,
+  validarCampos.instance.validarCampos
+], CitaMedica.instance.putCita);
 
-router.delete('/:id',[
-   
-    validarCampos.instance.validarCampos
-    ], CitaMedica.instance.deleteCita
+// Eliminar una cita
+router.delete('/:id', [
+  ...deleteCitaValidators,
+  validarCampos.instance.validarCampos
+], CitaMedica.instance.deleteCita);
 
- );
-
- export default router;
+export default router;

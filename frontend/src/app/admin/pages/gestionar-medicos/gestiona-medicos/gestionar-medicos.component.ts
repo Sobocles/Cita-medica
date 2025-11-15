@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Medico, MedicoResponse } from '../../interface/medicos';
 import { MedicoService } from '../../services/medico.service';
 import { Router } from '@angular/router';
-import Swal from 'sweetalert2';
 import { BusquedasService } from '../../services/busquedas.service';
+import { ErrorHandlerService } from '../../../../shared/services/error-handler.service';
 
 
 
@@ -22,7 +22,12 @@ export class GestionarMedicosComponent implements OnInit {
 
  
 
-  constructor(private MedicoService: MedicoService, private router: Router, private BusquedasService: BusquedasService){}
+  constructor(
+    private MedicoService: MedicoService,
+    private router: Router,
+    private BusquedasService: BusquedasService,
+    private errorHandler: ErrorHandlerService
+  ){}
 
   ngOnInit(){
     this.cargaMedicos();
@@ -30,42 +35,42 @@ export class GestionarMedicosComponent implements OnInit {
 
   cargaMedicos() {
     this.MedicoService.cargarMedicos(this.desde)
-      .subscribe((response: MedicoResponse) => {
-        this.totalUsuarios = response.total;
-      
-        this.medicos = response.medicos; 
-
+      .subscribe({
+        next: (response: MedicoResponse) => {
+          this.totalUsuarios = response.total;
+          this.medicos = response.medicos;
+        },
+        error: (err) => {
+          this.errorHandler.showError(err, 'Error al cargar médicos');
+          this.medicos = [];
+        }
       });
   }
 
   
 
-  borrarMedico( medico: Medico ) {
+  async borrarMedico(medico: Medico) {
+    const confirmado = await this.errorHandler.showConfirmation(
+      '¿Borrar médico?',
+      `Está a punto de eliminar a ${medico.nombre}. Tenga en cuenta que se eliminarán los horarios y las citas en las que el médico esté involucrado. Solo se eliminarán las citas en estado "terminado", por lo que las citas que ya fueron pagadas o están en curso seguirán activas. Por favor, asegúrese de contar con un médico suplente para atender estas citas o comuníquese con sus pacientes.`,
+      'Sí, borrarlo',
+      'Cancelar'
+    );
 
-    Swal.fire({
-      title: '¿Borrar médico?',
-      text: `Está a punto de eliminar a ${medico.nombre}. Tenga en cuenta que se eliminarán los horarios y las citas en las que el médico esté involucrado. Solo se eliminarán las citas en estado "terminado", por lo que las citas que ya fueron pagadas o están en curso seguirán activas. Por favor, asegúrese de contar con un médico suplente para atender estas citas o comuníquese con sus pacientes.`,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Si, borrarlo'
-    }).then((result) => {
-      if (result.value) {
-        
-        this.MedicoService.borrarMedico( medico.rut )
-          .subscribe( resp => {
-            
-            this.cargaMedicos();
-            Swal.fire(
-              'Médico borrado',
-              `${ medico.nombre } fue eliminado correctamente`,
-              'success'
-            );
-            
-          });
+    if (!confirmado) return;
 
+    this.MedicoService.borrarMedico(medico.rut).subscribe({
+      next: (resp) => {
+        this.errorHandler.showSuccess(
+          `${medico.nombre} fue eliminado correctamente`,
+          'Médico borrado'
+        );
+        this.cargaMedicos();
+      },
+      error: (err) => {
+        this.errorHandler.showError(err, 'Error al eliminar médico');
       }
-    })
-
+    });
   }
 
   editarMedico(medico: Medico) {
@@ -89,20 +94,22 @@ export class GestionarMedicosComponent implements OnInit {
       
 
   buscar(termino: string): void {
-  
     if (termino.length === 0) {
       this.cargaMedicos();
-        return; // Termina la ejecución si no hay término a buscar
+      return; // Termina la ejecución si no hay término a buscar
     }
 
-    this.BusquedasService.buscar('medicos', termino)
-  
-    .subscribe((resp: any) => {  // Cambia el tipo a 'any' para no tener problemas con el tipado
-      console.log(resp);
-      this.medicos = resp;
-  
-  });           
-}
+    this.BusquedasService.buscar('medicos', termino).subscribe({
+      next: (resp: any) => {
+        console.log(resp);
+        this.medicos = resp;
+      },
+      error: (err) => {
+        this.errorHandler.showError(err, 'Error al buscar médicos');
+        this.medicos = [];
+      }
+    });
+  }
 
 
 }

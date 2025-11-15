@@ -1,15 +1,30 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, catchError, throwError, map, of, tap } from 'rxjs';
 import { environment } from 'src/environment/environment';
 import { Usuario } from 'src/app/models/usuario';
 import { RegisterForm } from '../interfaces/register-form.register';
-import { Paciente } from 'src/app/admin/pages/interface/paciente';
 import { Medico } from 'src/app/models/medico';
 import { InfoClinica } from 'src/app/models/infoClinica';
+import { TokenService } from 'src/app/shared/services/token.service';
+import { PasswordService } from 'src/app/shared/services/password.service';
 
 const base_url = environment.base_url;
 
+/**
+ * Servicio de autenticación refactorizado
+ *
+ * Responsabilidades:
+ * - Login de usuarios y médicos
+ * - Registro de nuevos usuarios
+ * - Logout
+ * - Validación de tokens
+ * - Gestión del estado de usuario/médico autenticado
+ *
+ * Delega a:
+ * - TokenService: Manejo de tokens y localStorage
+ * - PasswordService: Recuperación y cambio de contraseñas
+ */
 @Injectable({
   providedIn: 'root'
 })
@@ -19,39 +34,49 @@ export class AuthService {
   public medico!: Medico;
   public infoClinica!: InfoClinica;
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private tokenService: TokenService,
+    public passwordService: PasswordService
+  ) {
     this.validarToken()
   }
 
+  /**
+   * Getter para acceder al token
+   * Delega a TokenService
+   */
   get token(): string {
-    return localStorage.getItem('token') || '';
+    return this.tokenService.getToken();
   }
 
+  /**
+   * Getter para headers con token
+   * Delega a TokenService
+   */
   get headers() {
-    return { 
-      headers: {
-        'x-token': this.token //ESTE ES EL GET TOKEN
-      }
-    }
+    return this.tokenService.getAuthHeaders();
   }
   
-  guardarLocalStorage(token: string, menu: any) {
-    localStorage.setItem('token', token);
-    localStorage.setItem('menu', JSON.stringify(menu)); //El localStorage solo guarda string por lo tanto hay que convertir el menu (porque es un arreglo de objetos)
-  }
-  
+  /**
+   * Inicia sesión con email y contraseña
+   * @param email - Email del usuario o médico
+   * @param password - Contraseña
+   * @returns Observable con la respuesta del servidor
+   */
   login(email: string, password: string) {
     console.log('🔑 Iniciando login con email:', email);
-    console.log("HOLAAA");
     const body = { email, password };
-    console.log("aqui",body);
+
     return this.http.post(`${base_url}/login`, body).pipe(
       tap((resp: any) => {
         console.log('🔑 Respuesta completa de login:', resp);
         console.log('🔑 userOrMedico:', resp.userOrMedico);
         console.log('🔑 Rol en respuesta:', resp.userOrMedico?.rol || resp.rol);
         console.log('🔑 Menú recibido:', resp.menu);
-        this.guardarLocalStorage(resp.token, resp.menu);
+
+        // Delegar guardado de sesión a TokenService
+        this.tokenService.saveSession(resp.token, resp.menu);
       }),
       catchError(error => {
         console.error('🔑 Error en login:', error);
@@ -60,13 +85,22 @@ export class AuthService {
     );
   }
 
+  /**
+   * Cierra la sesión del usuario
+   * Limpia token y menú del localStorage
+   */
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('menu'); 
+    this.tokenService.clearSession();
   }
 
+  /**
+   * Registra un nuevo usuario en el sistema
+   * @param formData - Datos del formulario de registro
+   * @returns Observable con la respuesta del servidor
+   */
   crearUsuario(formData: RegisterForm): Observable<RegisterForm> {
-    console.log('Creando usuario con datos:', formData);    
+    console.log('Creando usuario con datos:', formData);
+
     return this.http.post<RegisterForm>(`${base_url}/login/registro`, formData)
       .pipe(
         tap((resp: any) => {
@@ -74,31 +108,33 @@ export class AuthService {
         }),
         catchError(error => {
           console.error('Error en registro de usuario:', error);
-          // Extraer el mensaje específico de error si está disponible
-          if (error.error && error.error.msg) {
-            console.error('Mensaje del servidor:', error.error.msg);
-            return throwError(() => new Error(error.error.msg));
-          }
+          console.error('Mensaje del servidor:', error.error?.msg || 'Error desconocido');
           return throwError(() => error);
         })
       );
   }
 
+  /**
+   * Valida el token JWT actual y recarga la sesión
+   * @returns Observable<boolean> - true si el token es válido, false si no
+   */
   validarToken(): Observable<boolean> {
     console.log('⭐ Iniciando validación del token...');
-    const token = localStorage.getItem('token');
+    const token = this.tokenService.getToken();
     console.log('⭐ Token actual:', token ? 'Existe' : 'No existe');
-    
-    const options = {
-      headers: new HttpHeaders({
-        'Authorization': `Bearer ${token}`
-      })
-    };
-  
+
+    if (!token) {
+      return of(false);
+    }
+
+    const options = this.tokenService.getBearerHeaders();
+
     return this.http.post(`${base_url}/login/revalidarToken`, {}, options).pipe(
       map((resp: any) => {
         console.log('⭐ Respuesta completa de revalidación:', resp);
-        this.guardarLocalStorage(resp.token, resp.menu); 
+
+        // Delegar guardado de sesión a TokenService
+        this.tokenService.saveSession(resp.token, resp.menu); 
         
         if (!resp.userOrMedico) {
           console.error('❌ Error: userOrMedico no está definido en la respuesta');
@@ -155,55 +191,27 @@ export class AuthService {
     );
   }
 
+  /**
+   * @deprecated Usa passwordService.recuperarPassword() en su lugar
+   * Este método se mantiene por compatibilidad con código existente
+   */
   recuperarPassword(nombre: string, email: string) {
-    const url = `${base_url}/login/RecuperarPassword`;
-    const body = { nombre, email };
-
-    return this.http.post<Paciente>(url, body).pipe(
-      map((resp: Paciente) => {
-        return resp.ok;
-      }),
-      catchError(err => of(err.error.msg))
-    );
+    return this.passwordService.recuperarPassword(nombre, email);
   }
 
+  /**
+   * @deprecated Usa passwordService.cambiarPasswordUsuario() en su lugar
+   * Este método se mantiene por compatibilidad con código existente
+   */
   cambiarPassword(rut: string, password: string, newPassword: string) {
-    if (localStorage.getItem('token')) {
-      const url = `${base_url}/usuarios/cambiarPassword`;
-      const headers = new HttpHeaders({
-        'authorization': `Bearer ${localStorage.getItem('token')}`
-      });
-      const options = { headers: headers }
-      const body = { rut, password, newPassword }
-      
-      return this.http.post<any>(url, body, options).pipe(
-        map((resp: any) => {
-          return resp.ok;
-        }),
-        catchError(err => of(err.error.msg))
-      );
-    } else {
-      return of(false);
-    }
+    return this.passwordService.cambiarPasswordUsuario(rut, password, newPassword);
   }
 
+  /**
+   * @deprecated Usa passwordService.cambiarPasswordMedico() en su lugar
+   * Este método se mantiene por compatibilidad con código existente
+   */
   cambiarPasswordMedico(rut: string, password: string, newPassword: string) {
-    if (localStorage.getItem('token')) {
-      const url = `${base_url}/medicos/cambiarPassword`;
-      const headers = new HttpHeaders({
-        'authorization': `Bearer ${localStorage.getItem('token')}`
-      });
-      const options = { headers: headers }
-      const body = { rut, password, newPassword }
-      
-      return this.http.post<any>(url, body, options).pipe(
-        map((resp: any) => {
-          return resp.ok;
-        }),
-        catchError(err => of(err.error.msg))
-      );
-    } else {
-      return of(false);
-    }
+    return this.passwordService.cambiarPasswordMedico(rut, password, newPassword);
   }
 }

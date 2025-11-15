@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import citaService from '../services/Cita.service';
+import ResponseHelper from '../helpers/response.helper';
 
 /**
  * Controlador para manejar las peticiones HTTP relacionadas con citas médicas
@@ -22,17 +23,13 @@ export default class Cita {
 
             const resultado = await citaService.getCitas(desde, limite);
 
-            res.json({
-                ok: true,
+            return ResponseHelper.successWithCustomData(res, {
                 citas: resultado.citas,
                 total: resultado.total
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error al obtener citas:', error);
-            res.status(500).json({
-                ok: false,
-                error: 'Error al obtener citas'
-            });
+            return ResponseHelper.serverError(res, 'Error al obtener citas', error);
         }
     };
     
@@ -51,8 +48,7 @@ export default class Cita {
 
             const resultado = await citaService.getCitasMedico(rut_medico, desde, limite);
 
-            res.json({
-                ok: true,
+            return ResponseHelper.successWithCustomData(res, {
                 citas: resultado.citas,
                 total: resultado.count
             });
@@ -60,16 +56,10 @@ export default class Cita {
             console.error('Error al obtener citas del médico:', error);
 
             if (error.message === 'No se encontraron citas activas para este médico') {
-                return res.status(404).json({
-                    ok: false,
-                    msg: error.message
-                });
+                return ResponseHelper.notFound(res, error.message);
             }
 
-            res.status(500).json({
-                ok: false,
-                msg: 'Error interno del servidor'
-            });
+            return ResponseHelper.serverError(res, 'Error al obtener citas del médico', error);
         }
     };
 
@@ -85,8 +75,7 @@ export default class Cita {
 
             const resultado = await citaService.getCitasPaciente(rut_paciente, desde, limite);
 
-            res.json({
-                ok: true,
+            return ResponseHelper.successWithCustomData(res, {
                 citas: resultado.citas,
                 total: resultado.count
             });
@@ -94,16 +83,10 @@ export default class Cita {
             console.error('Error al obtener citas del paciente:', error);
 
             if (error.message === 'No se encontraron citas activas para este paciente') {
-                return res.status(404).json({
-                    ok: false,
-                    msg: error.message
-                });
+                return ResponseHelper.notFound(res, error.message);
             }
 
-            res.status(500).json({
-                ok: false,
-                msg: 'Error interno del servidor'
-            });
+            return ResponseHelper.serverError(res, 'Error al obtener citas del paciente', error);
         }
     };
 
@@ -118,32 +101,19 @@ export default class Cita {
 
             const citaMedica = await citaService.getCitaFactura(idCita);
 
-            return res.json({
-                ok: true,
-                citaMedica
-            });
+            return ResponseHelper.successWithCustomData(res, { citaMedica });
         } catch (error: any) {
             console.error('Error al obtener la cita médica y su factura:', error);
 
             if (error.message === 'Es necesario el ID de la cita médica') {
-                return res.status(400).json({
-                    ok: false,
-                    mensaje: error.message
-                });
+                return ResponseHelper.badRequest(res, error.message);
             }
 
             if (error.message === 'Cita médica no encontrada') {
-                return res.status(404).json({
-                    ok: false,
-                    mensaje: error.message
-                });
+                return ResponseHelper.notFound(res, error.message);
             }
 
-            return res.status(500).json({
-                ok: false,
-                mensaje: 'Error al obtener la cita médica y su factura',
-                error: error.message
-            });
+            return ResponseHelper.serverError(res, 'Error al obtener la cita médica y su factura', error);
         }
     };
 
@@ -163,24 +133,15 @@ export default class Cita {
 
             const nuevaCita = await citaService.crearCita(citaData);
 
-            res.json({
-                ok: true,
-                cita: nuevaCita
-            });
+            return ResponseHelper.successWithCustomData(res, { cita: nuevaCita });
         } catch (error: any) {
             console.error('Error al crear cita:', error);
 
             if (error.message === 'Ya existe una cita con el mismo ID') {
-                return res.status(400).json({
-                    ok: false,
-                    msg: error.message
-                });
+                return ResponseHelper.badRequest(res, error.message);
             }
 
-            res.status(500).json({
-                ok: false,
-                msg: 'Error al crear la cita médica'
-            });
+            return ResponseHelper.serverError(res, 'Error al crear la cita médica', error);
         }
     };
 
@@ -203,32 +164,19 @@ export default class Cita {
                 fecha
             });
 
-            return res.status(201).json({
-                ok: true,
-                cita: resultado
-            });
+            return ResponseHelper.created(res, { cita: resultado }, 'Cita creada exitosamente');
         } catch (error: any) {
             console.error('Error al crear la cita médica:', error);
 
             if (error.message === 'Ya tienes una cita programada. Debes asistir y terminar tu cita actual para agendar otra.') {
-                return res.status(400).json({
-                    ok: false,
-                    mensaje: error.message
-                });
+                return ResponseHelper.badRequest(res, error.message);
             }
 
             if (error.message === 'Todos los campos son requeridos') {
-                return res.status(400).json({
-                    ok: false,
-                    mensaje: error.message
-                });
+                return ResponseHelper.badRequest(res, error.message);
             }
 
-            return res.status(500).json({
-                ok: false,
-                mensaje: 'Error al crear la cita médica',
-                error: error.message
-            });
+            return ResponseHelper.serverError(res, 'Error al crear la cita médica', error);
         }
     };
     
@@ -249,25 +197,18 @@ export default class Cita {
 
             const citaActualizada = await citaService.actualizarCita(idCita, citaData);
 
-            res.json({
-                ok: true,
-                msg: 'Cita actualizada correctamente',
-                cita: citaActualizada
+            return ResponseHelper.successWithCustomData(res, {
+                cita: citaActualizada,
+                msg: 'Cita actualizada correctamente'
             });
         } catch (error: any) {
             console.error('Error al actualizar cita:', error);
 
             if (error.message === 'Cita no encontrada') {
-                return res.status(404).json({
-                    ok: false,
-                    msg: error.message
-                });
+                return ResponseHelper.notFound(res, error.message);
             }
 
-            res.status(500).json({
-                ok: false,
-                msg: 'Error al actualizar la cita'
-            });
+            return ResponseHelper.serverError(res, 'Error al actualizar la cita', error);
         }
     };
         
@@ -283,24 +224,15 @@ export default class Cita {
 
             const resultado = await citaService.eliminarCita(idCita);
 
-            res.json({
-                ok: true,
-                msg: resultado.mensaje
-            });
+            return ResponseHelper.success(res, undefined, resultado.mensaje);
         } catch (error: any) {
             console.error('Error al eliminar cita:', error);
 
             if (error.message?.includes('No existe una cita con el id')) {
-                return res.status(404).json({
-                    ok: false,
-                    msg: error.message
-                });
+                return ResponseHelper.notFound(res, error.message);
             }
 
-            res.status(500).json({
-                ok: false,
-                msg: 'Error en el servidor'
-            });
+            return ResponseHelper.serverError(res, 'Error al eliminar cita', error);
         }
     };
 }

@@ -1,28 +1,40 @@
 import { Request, Response } from 'express';
 import mercadopago from "mercadopago";
 import { CreatePreferencePayload } from 'mercadopago/models/preferences/create-payload.model';
-import Factura from '../models/factura'; 
+import Factura from '../models/factura';
 import tipo_cita from '../models/tipo_cita';
 import CitaMedica from '../models/cita_medica';
 import Medico from '../models/medico';
 import Usuario from '../models/usuario';
 import Email from '../helpers/emails';
 import db from '../db/connection';
+import { MERCADOPAGO_ACCESS_TOKEN, BACKEND_URL, FRONTEND_URL, NGROK_URL } from '../global/enviorenment';
+import ResponseHelper from '../helpers/response.helper';
+
+/**
+ * Controlador para manejar pagos con MercadoPago
+ * IMPORTANTE: Usa variables de entorno para todas las credenciales
+ */
 
 export const createOrder = async (req: Request, res: Response) => {
   console.log("ENTRO A CREATE ORDER");
-  
-  // Configurar MercadoPago con variable de entorno
-  mercadopago.configure({
-    access_token: process.env.MERCADOPAGO_ACCESS_TOKEN || 'TEST-884031095793760-111819-b2ad3ea11301ffbeab5f5eaef06ad47f-293343090',
-  });
+
+  // Configurar MercadoPago - SIN FALLBACK hardcodeado por seguridad
+  try {
+    mercadopago.configure({
+      access_token: MERCADOPAGO_ACCESS_TOKEN,
+    });
+  } catch (error: any) {
+    console.error('Error al configurar MercadoPago:', error);
+    return ResponseHelper.serverError(res, 'Error de configuración del servicio de pagos', error);
+  }
 
   const { motivo, precio, idCita } = req.body;
 
   try {
     // URLs dinámicas basadas en variables de entorno
-    const baseUrl = process.env.NGROK_URL || process.env.BACKEND_URL || 'http://localhost:8000';
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+    const baseUrl = NGROK_URL || BACKEND_URL;
+    const frontendUrl = FRONTEND_URL;
 
     const preference: CreatePreferencePayload = {
       items: [
@@ -44,21 +56,16 @@ export const createOrder = async (req: Request, res: Response) => {
     };
 
     const response = await mercadopago.preferences.create(preference);
-    
-    res.json({
-      ok: true,
+
+    return ResponseHelper.successWithCustomData(res, {
       id: response.body.id,
       init_point: response.body.init_point,
       sandbox_init_point: response.body.sandbox_init_point
     });
 
-  } catch (error) {
-    const err = error as Error;
-    console.error('Error en createOrder:', err);
-    res.status(500).json({
-      error: 'Error al generar el link de pago',
-      detalle: err.message
-    });
+  } catch (error: any) {
+    console.error('Error en createOrder:', error);
+    return ResponseHelper.serverError(res, 'Error al generar el link de pago', error);
   }
 };
 

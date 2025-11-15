@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { rutValidator } from 'src/app/shared/Validators/rut-validator';
 import { phoneValidator } from 'src/app/shared/Validators/phone-validator';
 import { passwordStrengthValidator } from 'src/app/shared/Validators/password-strength-validator';
+import { ErrorHandlerService } from 'src/app/shared/services/error-handler.service';
 
 @Component({
   selector: 'app-register',
@@ -15,7 +16,12 @@ import { passwordStrengthValidator } from 'src/app/shared/Validators/password-st
 export class RegisterComponent implements OnInit {
   miFormulario: FormGroup;
   
-  constructor(private fb: FormBuilder, private AuthService: AuthService, private router: Router) {
+  constructor(
+    private fb: FormBuilder,
+    private AuthService: AuthService,
+    private router: Router,
+    private errorHandler: ErrorHandlerService
+  ) {
     this.miFormulario = this.fb.group({
       rut: ['', [Validators.required, rutValidator()]],
       nombre: ['', Validators.required],
@@ -71,21 +77,19 @@ export class RegisterComponent implements OnInit {
   registrar() {
     if (this.miFormulario.invalid) {
       this.miFormulario.markAllAsTouched();
-      
-      // Mostrar mensaje de formulario incompleto
-      Swal.fire({
-        icon: 'warning',
-        title: 'Formulario incompleto',
-        text: 'Por favor, complete todos los campos requeridos correctamente.',
-        confirmButtonText: 'Entendido'
-      });
+
+      // Usar ErrorHandlerService para mostrar advertencia
+      this.errorHandler.showWarning(
+        'Por favor, complete todos los campos requeridos correctamente.',
+        'Formulario incompleto'
+      );
       return;
     }
  
     const formData = this.miFormulario.value;
  
-    this.AuthService.crearUsuario(formData).subscribe(
-      (respuesta) => {
+    this.AuthService.crearUsuario(formData).subscribe({
+      next: (respuesta) => {
         Swal.fire({
           icon: 'success',
           title: '¡Registro completado!',
@@ -97,15 +101,10 @@ export class RegisterComponent implements OnInit {
           }
         });
       },
-      (err) => {
-        if (err.error.msg === 'El correo ya está registrado') {
-          Swal.fire('Error', 'El correo electrónico ya está en uso. Por favor, intenta con otro.', 'error');
-        } else if (err.error.msg === 'El teléfono ya está registrado') {
-          Swal.fire('Error', 'El número de teléfono ya está en uso. Por favor, intenta con otro.', 'error');
-        } else {
-          Swal.fire('Error', 'Ha ocurrido un error durante el registro. Por favor, inténtalo de nuevo.', 'error');
-        }
+      error: (err) => {
+        // Usar ErrorHandlerService para manejo centralizado de errores de autenticación
+        this.errorHandler.handleAuthError(err);
       }
-    );
+    });
   }
 }

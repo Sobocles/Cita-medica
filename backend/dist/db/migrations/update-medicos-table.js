@@ -9,8 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.up = up;
-exports.down = down;
+exports.down = exports.up = void 0;
 // db/migrations/update-medicos-table.ts
 /**
  * Este archivo debe ejecutarse para actualizar la tabla de médicos
@@ -73,6 +72,7 @@ function up(queryInterface, sequelize) {
         }
     });
 }
+exports.up = up;
 function down(queryInterface, sequelize) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
@@ -107,4 +107,5 @@ function down(queryInterface, sequelize) {
         }
     });
 }
+exports.down = down;
 //# sourceMappingURL=update-medicos-table.js.map

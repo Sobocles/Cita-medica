@@ -45,6 +45,14 @@ class HistorialMedicoRepository {
             return historial_medico_1.default.count(options);
         });
     }
+    /**
+     * Actualiza historiales médicos que cumplen con las condiciones especificadas
+     */
+    updateWhere(where, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return historial_medico_1.default.update(data, { where });
+        });
+    }
 }
 exports.HistorialMedicoRepository = HistorialMedicoRepository;
 exports.default = new HistorialMedicoRepository();

@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors  } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PacienteService } from '../../services/usuario.service';
 import { Router } from '@angular/router';
-import Swal from 'sweetalert2';
 import { rutValidator } from 'src/app/shared/Validators/rut-validator';
 import { passwordStrengthValidator } from 'src/app/shared/Validators/password-strength-validator';
 import { phoneValidator } from 'src/app/shared/Validators/phone-validator';
+import { gmailValidator } from 'src/app/shared/Validators/gmail-validator';
+import { ErrorHandlerService } from '../../../../shared/services/error-handler.service';
 
 @Component({
   selector: 'app-agregar-paciente',
@@ -16,13 +17,18 @@ export class AgregarPacienteComponent {
 
   formulario: FormGroup;
 
-  constructor(private formBuilder: FormBuilder, private PacienteService: PacienteService, private router: Router) {
+  constructor(
+    private formBuilder: FormBuilder,
+    private PacienteService: PacienteService,
+    private router: Router,
+    private errorHandler: ErrorHandlerService
+  ) {
     this.formulario = this.formBuilder.group({
       rut: ['', [Validators.required, rutValidator()]],
       nombre: ['', Validators.required],
       apellidos: ['', Validators.required],
       password: ['', [Validators.required, passwordStrengthValidator()]],
-      email: ['', [Validators.required, Validators.email, this.gmailValidator]],
+      email: ['', [Validators.required, Validators.email, gmailValidator()]],
       fecha_nacimiento: ['', Validators.required],
       telefono: ['', [Validators.required, phoneValidator()]],
       direccion: ['', Validators.required],
@@ -30,48 +36,32 @@ export class AgregarPacienteComponent {
   }
 
 
-
-  gmailValidator(control: AbstractControl): ValidationErrors | null {
-    const value = control.value;
-    if (!value) {
-      return null;
-    }
-  
-    const isGmail = value.endsWith('@gmail.com');
-    return !isGmail ? { 'notGmail': true } : null;
-  }
-
-
   crearPaciente() {
     if (this.formulario.invalid) {
       // Marca todos los controles del formulario como tocados
       this.formulario.markAllAsTouched();
+      this.errorHandler.showValidationError(
+        'Por favor completa todos los campos requeridos correctamente',
+        'Formulario inválido'
+      );
       return;
     }
-  
+
     const formData = this.formulario.value;
     console.log(formData);
-  
-    this.PacienteService.crearPaciente(formData).subscribe(
-      (respuesta: any) => {
-        // Mensaje de éxito con SweetAlert
-        Swal.fire({
-          title: '¡Éxito!',
-          text: 'El paciente ha sido creado con éxito.',
-          icon: 'success',
-          confirmButtonText: 'Aceptar'
-        }).then((result) => {
-          // Redireccionar a la ruta 'gestionar-pacientes' después de cerrar el SweetAlert
-          if (result.isConfirmed) {
-            this.router.navigate(['/gestionar-pacientes']);
-          }
-        });
-  
-      }, (err) => {
-        // Mensaje de error con SweetAlert
-        Swal.fire('Error', err.error.msg, 'error');
+
+    this.PacienteService.crearPaciente(formData).subscribe({
+      next: (respuesta: any) => {
+        this.errorHandler.showSuccess(
+          'El paciente ha sido creado con éxito',
+          '¡Éxito!'
+        );
+        this.router.navigate(['/gestionar-pacientes']);
+      },
+      error: (err) => {
+        this.errorHandler.showError(err, 'Error al crear paciente');
       }
-    );
+    });
   }
   
   

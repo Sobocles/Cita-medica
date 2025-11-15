@@ -1,38 +1,39 @@
-import {Router} from 'express'
+import { Router } from 'express';
 import { createOrder, receiveWebhook } from '../controllers/mercadoPago';
 import { getAllFacturas, obtenerFacturaPorId, eliminarFactura } from '../controllers/facturas';
+import validarCampos from '../middlewares/validar-campos';
+import {
+  createOrderValidators,
+  webhookValidators,
+  getFacturaValidators
+} from '../middlewares/validators/mercadopago.validators';
 
+const router = Router();
 
+// Crear orden de pago
+router.post('/create-order', [
+  ...createOrderValidators,
+  validarCampos.instance.validarCampos
+], createOrder);
 
+// URLs de retorno de MercadoPago
+router.get('/success', (req, res) => res.send('success'));
+router.get('/failure', (req, res) => res.send('failure'));
+router.get('/pending', (req, res) => res.send('pending'));
 
-const router = Router()
+// Webhook de MercadoPago (validación opcional ya que viene de MercadoPago)
+router.post('/webhook', [
+  ...webhookValidators,
+  validarCampos.instance.validarCampos
+], receiveWebhook);
 
-router.post('/create-order'
-,createOrder )
+// Obtener todas las facturas
+router.get('/factura', getAllFacturas);
 
-router.get('/success',(req, res) => res.send('success'))
-
-router.get('/failure',(req, res) => res.send('failure'))
-
-router.get('/pending',(req, res) => res.send('pending'))
-
-router.post('/webhook', receiveWebhook )
-
-router.get('/factura', 
-getAllFacturas
-
- );
-
-
-
- router.get('/factura/:id',
- obtenerFacturaPorId
-
- );
-
-
-
-
-
+// Obtener una factura por ID
+router.get('/factura/:id', [
+  ...getFacturaValidators,
+  validarCampos.instance.validarCampos
+], obtenerFacturaPorId);
 
 export default router;

@@ -15,23 +15,13 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -57,9 +47,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 // services/auth.service.ts
-const usuario_1 = __importDefault(require("../models/usuario"));
-const medico_1 = __importDefault(require("../models/medico"));
-const info_clinica_1 = __importDefault(require("../models/info-clinica"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jwt_1 = __importDefault(require("../helpers/jwt"));
 const emails_1 = __importDefault(require("../helpers/emails"));
@@ -67,6 +54,10 @@ const rol_service_1 = __importDefault(require("./rol.service"));
 const menu_frontend_1 = require("../helpers/menu-frontend");
 const generatePassword = __importStar(require("generate-password"));
 const enums_1 = require("../types/enums");
+const usuario_repository_1 = __importDefault(require("../repositories/usuario.repository"));
+const medico_repository_1 = __importDefault(require("../repositories/medico.repository"));
+const rol_repository_1 = __importDefault(require("../repositories/rol.repository"));
+const InfoClinicaRepository_1 = __importDefault(require("../repositories/InfoClinicaRepository"));
 const rol_1 = __importDefault(require("../models/rol"));
 /**
  * Servicio de autenticación que maneja todas las operaciones relacionadas
@@ -86,10 +77,10 @@ class AuthService {
      */
     verificarEmailExistente(email) {
         return __awaiter(this, void 0, void 0, function* () {
-            const usuarioExistente = yield usuario_1.default.findOne({ where: { email } });
+            const usuarioExistente = yield usuario_repository_1.default.findOne({ where: { email } });
             if (usuarioExistente)
                 return true;
-            const medicoExistente = yield medico_1.default.findOne({ where: { email } });
+            const medicoExistente = yield medico_repository_1.default.findOne({ where: { email } });
             if (medicoExistente)
                 return true;
             return false;
@@ -102,10 +93,10 @@ class AuthService {
      */
     verificarTelefonoExistente(telefono) {
         return __awaiter(this, void 0, void 0, function* () {
-            const usuarioExistente = yield usuario_1.default.findOne({ where: { telefono } });
+            const usuarioExistente = yield usuario_repository_1.default.findOne({ where: { telefono } });
             if (usuarioExistente)
                 return true;
-            const medicoExistente = yield medico_1.default.findOne({ where: { telefono } });
+            const medicoExistente = yield medico_repository_1.default.findOne({ where: { telefono } });
             if (medicoExistente)
                 return true;
             return false;
@@ -122,7 +113,7 @@ class AuthService {
             console.log("🔍 userData recibido:", userData);
             // ✅ BUSCAR Y ASIGNAR ROL DE USUARIO POR CÓDIGO (OPCIÓN ROBUSTA)
             console.log("🔍 Buscando rol USER_ROLE en la base de datos...");
-            const rolUsuario = yield rol_1.default.findOne({ where: { codigo: 'USER_ROLE' } });
+            const rolUsuario = yield rol_repository_1.default.findByCode('USER_ROLE');
             console.log("🔍 Resultado de búsqueda de rol:", rolUsuario);
             if (!rolUsuario) {
                 console.error("❌ Error: Rol USER_ROLE no encontrado");
@@ -140,7 +131,7 @@ class AuthService {
             console.log("rolId FINAL asignado:", userData.rolId);
             // Crear usuario en la base de datos
             console.log("🔍 Creando usuario en la base de datos...");
-            const nuevoUsuario = yield usuario_1.default.create(userData);
+            const nuevoUsuario = yield usuario_repository_1.default.create(userData);
             console.log("✅ Usuario creado con rolId:", nuevoUsuario.rolId);
             // Obtener el rol del usuario (ya sabemos que existe)
             const rolCodigo = rolUsuario.codigo;
@@ -152,7 +143,7 @@ class AuthService {
             // Obtener menú según el rol
             const menu = (0, menu_frontend_1.getMenuFrontEnd)(rolCodigo);
             // Obtener información de la clínica
-            const infoClinica = yield info_clinica_1.default.findOne();
+            const infoClinica = yield InfoClinicaRepository_1.default.findOne();
             // Datos para devolver (excluir contraseña)
             const usuarioJSON = nuevoUsuario.toJSON();
             // Agregar el rol como propiedad separada para compatibilidad
@@ -175,13 +166,13 @@ class AuthService {
      * @throws Error si las credenciales son inválidas o el usuario está inactivo
      */
     autenticarUsuario(email, password) {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            var _a;
             // Buscar primero en usuarios
             let entidadAutenticada = null;
             let rolCodigo = '';
             // Intentar autenticar como usuario regular
-            const usuario = yield usuario_1.default.findOne({
+            const usuario = yield usuario_repository_1.default.findOne({
                 where: { email },
                 include: [{
                         model: rol_1.default,
@@ -209,7 +200,7 @@ class AuthService {
             }
             else {
                 // Si no es usuario, intentar como médico
-                const medico = yield medico_1.default.findOne({ where: { email } });
+                const medico = yield medico_repository_1.default.findOne({ where: { email } });
                 if (medico) {
                     // Verificar si está activo
                     if (medico.estado === 'inactivo') {
@@ -233,11 +224,11 @@ class AuthService {
             // Obtener menú según el rol
             const menu = (0, menu_frontend_1.getMenuFrontEnd)(rolCodigo);
             // Obtener información de la clínica
-            const infoClinica = yield info_clinica_1.default.findOne();
+            const infoClinica = yield InfoClinicaRepository_1.default.findOne();
             // Datos para devolver (excluir contraseña)
             const { password: _ } = entidadAutenticada, entidadSinPassword = __rest(entidadAutenticada, ["password"]);
             return {
-                userOrMedico: entidadSinPassword, // Cambiado de "entidad" a "userOrMedico" para compatibilidad con frontend
+                userOrMedico: entidadSinPassword,
                 token,
                 menu,
                 infoClinica,
@@ -253,14 +244,14 @@ class AuthService {
      * @throws Error si el usuario o médico no existe
      */
     revalidarToken(rut, rol) {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
-            var _a, _b;
             console.log('🔍 Backend AuthService - revalidarToken iniciado con:', { rut, rol });
             let userOrMedico;
             // Buscar según el rol
             if (rol === enums_1.UserRole.USER || rol === enums_1.UserRole.ADMIN) {
                 console.log('🔍 Buscando usuario con rut:', rut);
-                userOrMedico = yield usuario_1.default.findOne({
+                userOrMedico = yield usuario_repository_1.default.findOne({
                     where: { rut },
                     include: [{
                             model: rol_1.default,
@@ -286,7 +277,7 @@ class AuthService {
             }
             else if (rol === enums_1.UserRole.MEDICO) {
                 console.log('🔍 Buscando médico con rut:', rut);
-                userOrMedico = yield medico_1.default.findOne({
+                userOrMedico = yield medico_repository_1.default.findOne({
                     where: { rut },
                     include: [{
                             model: rol_1.default,
@@ -315,7 +306,7 @@ class AuthService {
             }
             // Obtener información de la clínica
             console.log('🔍 Obteniendo información de la clínica');
-            const infoClinica = yield info_clinica_1.default.findOne();
+            const infoClinica = yield InfoClinicaRepository_1.default.findOne();
             // Generar nuevo token
             console.log('🔍 Generando nuevo token para:', { rut, nombre: userOrMedico.nombre, rol });
             const newToken = yield jwt_1.default.instance.generarJWT(userOrMedico.rut, userOrMedico.nombre, userOrMedico.apellidos, rol // Aquí ya recibimos el código del rol, no el ID
@@ -327,7 +318,7 @@ class AuthService {
             const { password } = userOrMedico, userOrMedicoSinPassword = __rest(userOrMedico, ["password"]);
             const resultado = {
                 token: newToken,
-                userOrMedico: userOrMedicoSinPassword, // Ya está nombrado correctamente para compatibilidad
+                userOrMedico: userOrMedicoSinPassword,
                 menu,
                 infoClinica,
                 rol // Incluir explícitamente el rol en la respuesta
@@ -352,10 +343,12 @@ class AuthService {
     recuperarPassword(nombre, email) {
         return __awaiter(this, void 0, void 0, function* () {
             // Intentar encontrar primero en usuarios
-            let entidad = yield usuario_1.default.findOne({ where: { nombre } });
+            let entidad = yield usuario_repository_1.default.findOne({ where: { nombre } });
+            let esUsuario = true;
             if (!entidad) {
                 // Si no es usuario, buscar en médicos
-                entidad = yield medico_1.default.findOne({ where: { nombre } });
+                entidad = yield medico_repository_1.default.findOne({ where: { nombre } });
+                esUsuario = false;
                 if (!entidad) {
                     throw new Error('El usuario o médico no existe');
                 }
@@ -372,9 +365,14 @@ class AuthService {
             const password = generatePassword.generate({ length: 10, numbers: true });
             // Encriptar nueva contraseña
             const salt = bcrypt_1.default.genSaltSync();
-            entidad.password = bcrypt_1.default.hashSync(password, salt);
-            // Guardar cambios
-            yield entidad.save();
+            const hashedPassword = bcrypt_1.default.hashSync(password, salt);
+            // Actualizar contraseña usando el repositorio apropiado
+            if (esUsuario) {
+                yield usuario_repository_1.default.update(entidad, { password: hashedPassword });
+            }
+            else {
+                yield medico_repository_1.default.update(entidad, { password: hashedPassword });
+            }
             // Enviar correo con nueva contraseña
             emails_1.default.instance.enviarEmail(email, nombre, password);
             return {
