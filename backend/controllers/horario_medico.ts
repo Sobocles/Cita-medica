@@ -1,11 +1,18 @@
 import { Request, Response } from 'express';
 import horarioMedicoService from '../services/horario.medico.service';
 
+/**
+ * Controlador para manejar las peticiones HTTP relacionadas con horarios médicos
+ * RESPONSABILIDAD: Solo manejar request/response, delegar lógica al servicio
+ */
 export default class HorarioMedicoController {
+    /**
+     * Obtiene todos los horarios médicos con paginación
+     */
     async getHorariosMedicos(req: Request, res: Response) {
         try {
             const desde = Number(req.query.desde) || 0;
-            const limite = 5; // Fijo según tu código original
+            const limite = 5;
 
             const { count, rows: horarios } = await horarioMedicoService.getHorariosMedicos(desde, limite);
 
@@ -15,10 +22,18 @@ export default class HorarioMedicoController {
                 total: count
             });
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            console.error('Error al obtener horarios médicos:', error);
+            res.status(500).json({
+                ok: false,
+                msg: 'Error interno del servidor',
+                error: error.message
+            });
         }
     }
 
+    /**
+     * Obtiene un horario médico por su ID
+     */
     async getHorarioMedico(req: Request, res: Response) {
         try {
             const { id } = req.params;
@@ -36,10 +51,18 @@ export default class HorarioMedicoController {
                 horario
             });
         } catch (error: any) {
-            res.status(500).json({ error: error.message });
+            console.error('Error al obtener horario médico:', error);
+            res.status(500).json({
+                ok: false,
+                msg: 'Error interno del servidor',
+                error: error.message
+            });
         }
     }
 
+    /**
+     * Crea un nuevo horario médico con validación de solapamiento
+     */
     async crearHorarioMedico(req: Request, res: Response) {
         try {
             const horario = await horarioMedicoService.crearHorarioMedico(req.body);
@@ -48,6 +71,7 @@ export default class HorarioMedicoController {
                 horario
             });
         } catch (error: any) {
+            console.error('Error al crear horario médico:', error);
             res.status(400).json({
                 ok: false,
                 msg: error.message
@@ -55,31 +79,63 @@ export default class HorarioMedicoController {
         }
     }
 
+    /**
+     * Actualiza un horario médico existente
+     */
     async putHorarioMedico(req: Request, res: Response) {
         try {
             const { id } = req.params;
             const horario = await horarioMedicoService.actualizarHorarioMedico(parseInt(id), req.body);
-            
+
             res.json({
                 ok: true,
                 msg: 'Horario actualizado correctamente',
                 horario
             });
         } catch (error: any) {
-            const status = error.message === 'Horario no encontrado' ? 404 : 400;
-            res.status(status).json({ error: error.message });
+            console.error('Error al actualizar horario médico:', error);
+
+            if (error.message === 'Horario no encontrado') {
+                return res.status(404).json({
+                    ok: false,
+                    msg: error.message
+                });
+            }
+
+            res.status(400).json({
+                ok: false,
+                msg: error.message
+            });
         }
     }
 
+    /**
+     * Elimina un horario médico
+     */
     async deleteHorarioMedico(req: Request, res: Response) {
         try {
             const { id } = req.params;
             await horarioMedicoService.eliminarHorarioMedico(parseInt(id));
-            
-            res.json({ msg: 'Horario eliminado correctamente' });
+
+            res.json({
+                ok: true,
+                msg: 'Horario eliminado correctamente'
+            });
         } catch (error: any) {
-            const status = error.message === 'Horario no encontrado' ? 404 : 500;
-            res.status(status).json({ error: error.message });
+            console.error('Error al eliminar horario médico:', error);
+
+            if (error.message === 'Horario no encontrado') {
+                return res.status(404).json({
+                    ok: false,
+                    msg: error.message
+                });
+            }
+
+            res.status(500).json({
+                ok: false,
+                msg: 'Error interno del servidor',
+                error: error.message
+            });
         }
     }
 }

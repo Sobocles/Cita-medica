@@ -1,5 +1,5 @@
 import HistorialMedico from '../models/historial_medico';
-import { Op, IncludeOptions } from 'sequelize';
+import { Op, IncludeOptions, WhereOptions } from 'sequelize';
 
 export class HistorialMedicoRepository {
     async findAndCountAll(options: any) {
@@ -24,6 +24,13 @@ export class HistorialMedicoRepository {
 
     async count(options: any) {
         return HistorialMedico.count(options);
+    }
+
+    /**
+     * Actualiza historiales médicos que cumplen con las condiciones especificadas
+     */
+    async updateWhere(where: WhereOptions<any>, data: any) {
+        return HistorialMedico.update(data, { where });
     }
 }
 

@@ -18,10 +18,17 @@ const base_url = environment.base_url;
 */
 export class Usuario {
 
-    constructor( 
+    // Campos de previsión de salud
+    public tipo_prevision?: 'Fonasa' | 'Isapre' | 'Particular';
+    public nombre_isapre?: string;
+    public tramo_fonasa?: 'A' | 'B' | 'C' | 'D';
+    public prevision_validada?: boolean;
+    public fecha_validacion_prevision?: Date;
+
+    constructor(
         public nombre: string,
         public apellidos: string,
-  
+
         public rol: 'ADMIN_ROLE' | 'USER_ROLE',
         public rut: string,
      ) {}

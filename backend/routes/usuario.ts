@@ -7,14 +7,19 @@ import {
   putUsuario,
   deleteUsuario,
   getAllUsuarios,
-      getPacientesConCitasPagadasYEnCursoYterminado,
-          getPacientesConCitasPagadasYEnCurso,
+  getPacientesConCitasPagadasYEnCursoYterminado,
+  getPacientesConCitasPagadasYEnCurso,
   cambiarPassword,
-
   CrearUsuario
 } from '../controllers/usuario';
 import validarCampos from '../middlewares/validar-campos';
 import ValidarJwt from '../middlewares/validar-jwt';
+import {
+  updateUsuarioValidators,
+  deleteUsuarioValidators,
+  getUsuarioValidators,
+  cambiarPasswordValidators
+} from '../middlewares/validators/usuario.validators';
 
 const router = Router();
 
@@ -31,11 +36,14 @@ router.get('/allCurso/:rut_medico', getPacientesConCitasPagadasYEnCurso);
 router.get('/allCursoTerminado/:rut_medico', getPacientesConCitasPagadasYEnCursoYterminado);
 
 // Obtener un usuario por ID
-router.get('/:id', getUsuario);
+router.get('/:id', [
+  ...getUsuarioValidators,
+  validarCampos.instance.validarCampos
+], getUsuario);
 
 // Restaurar la ruta de creación de usuario para mantener compatibilidad
 router.post(
-  '/',  
+  '/',
   [
     check('nombre', 'El nombre es obligatorio').not().isEmpty(),
     check('apellidos', 'Los apellidos son obligatorios').not().isEmpty(),
@@ -48,15 +56,20 @@ router.post(
 );
 
 // Actualizar un usuario
-router.put('/:id', putUsuario);
+router.put('/:id', [
+  ...updateUsuarioValidators,
+  validarCampos.instance.validarCampos
+], putUsuario);
 
 // Eliminar un usuario
-router.delete('/:rut', deleteUsuario);
+router.delete('/:rut', [
+  ...deleteUsuarioValidators,
+  validarCampos.instance.validarCampos
+], deleteUsuario);
 
 // Cambiar contraseña
 router.post('/cambiarPassword', [
-  check('newPassword', 'El nuevo password es obligatorio').isLength({min: 6}),
-  check('password', 'El password es obligatorio').isLength({min: 6}),
+  ...cambiarPasswordValidators,
   validarCampos.instance.validarCampos
 ], cambiarPassword);
 

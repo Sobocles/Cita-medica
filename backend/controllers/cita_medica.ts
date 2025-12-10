@@ -1,12 +1,11 @@
-
 import { Request, Response } from 'express';
-import CitaMedica from '../models/cita_medica';
-import Usuario from '../models/usuario';
-import Medico from '../models/medico';
-import TipoCita from '../models/tipo_cita';
-import { Op } from 'sequelize';
-import Factura from '../models/factura';
+import citaService from '../services/Cita.service';
+import ResponseHelper from '../helpers/response.helper';
 
+/**
+ * Controlador para manejar las peticiones HTTP relacionadas con citas médicas
+ * RESPONSABILIDAD: Solo manejar request/response, delegar lógica al servicio
+ */
 export default class Cita {
     private static _instance: Cita;
 
@@ -14,53 +13,23 @@ export default class Cita {
         return this._instance || (this._instance = new Cita());
     }
     
+    /**
+     * Obtiene todas las citas activas con paginación
+     */
     public getCitas = async (req: Request, res: Response) => {
         try {
             const desde = Number(req.query.desde) || 0;
-    
-            // Obtén el total de citas activas que no estén en estado 'no_pagado'
-            const totalCitas = await CitaMedica.count({
-                where: {
-                    estado_actividad: 'activo',
-                    estado: { [Op.ne]: 'no_pagado' } // Excluye las citas con estado 'no_pagado'
-                }
+            const limite = 5;
+
+            const resultado = await citaService.getCitas(desde, limite);
+
+            return ResponseHelper.successWithCustomData(res, {
+                citas: resultado.citas,
+                total: resultado.total
             });
-    
-            const citas = await CitaMedica.findAll({
-                include: [
-                    {
-                        model: Usuario,
-                        as: 'paciente',
-                        attributes: ['nombre', 'apellidos'],
-                    },
-                    {
-                        model: Medico,
-                        as: 'medico',
-                        attributes: ['nombre','apellidos'],
-                    },
-                    {
-                        model: TipoCita,
-                        as: 'tipoCita',
-                        attributes: ['especialidad_medica'],
-                    },
-                ],
-                where: {
-                    estado_actividad: 'activo',
-                    estado: { [Op.ne]: 'no_pagado' } // Excluye las citas con estado 'no_pagado'
-                },
-                attributes: ['idCita', 'motivo', 'fecha', 'hora_inicio', 'hora_fin', 'estado'],
-                offset: desde,
-                limit: 5,
-            });
-    
-            res.json({
-                ok: true,
-                citas,
-                total: totalCitas
-            });
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error al obtener citas:', error);
-            res.status(500).json({ error: 'Error al obtener citas' });
+            return ResponseHelper.serverError(res, 'Error al obtener citas', error);
         }
     };
     
@@ -68,375 +37,252 @@ export default class Cita {
 
     
 
-  public getCitasMedico = async (req: Request, res: Response) => {
-    const { rut_medico } = req.params;
-    const desde = Number(req.query.desde) || 0;
-    const limite = Number(req.query.limite) || 5;
-
-    try {
-        // Contar total de citas activas para este médico
-        const totalCitas = await CitaMedica.count({
-            where: {
-                rut_medico: rut_medico,
-                estado: {
-                    [Op.or]: ['en_curso', 'pagado','terminado']
-                },
-                estado_actividad: 'activo' // Solo considerar citas activas
-            }
-        });
-
-        // Obtener las citas activas con paginación y detalles de paciente y médico
-        const citas = await CitaMedica.findAll({
-            where: {
-                rut_medico: rut_medico,
-                estado: {
-                    [Op.or]: ['en_curso', 'pagado','terminado']
-                },
-                estado_actividad: 'activo' // Solo considerar citas activas
-            },
-            include: [
-                {
-                    model: Usuario,
-                    as: 'paciente',
-                    attributes: ['nombre', 'apellidos']
-                },
-                {
-                    model: Medico,
-                    as: 'medico',
-                    attributes: ['nombre', 'apellidos']
-                }
-            ],
-            attributes: { exclude: ['rut_paciente', 'rut_medico'] },
-            offset: desde,
-            limit: limite
-        });
-
-        if (!citas || citas.length === 0) {
-            return res.status(404).json({
-                ok: false,
-                msg: 'No se encontraron citas activas para este médico',
-            });
-        }
-
-        res.json({
-            ok: true,
-            citas,
-            total: totalCitas
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            ok: false,
-            msg: 'Error interno del servidor',
-        });
-    }
-};
-
-
-public getCitasPaciente = async (req: Request, res: Response) => {
-    const { rut_paciente } = req.params;
-    console.log('aqui esta el rut',rut_paciente);
-    const desde = Number(req.query.desde) || 0;
-    const limite = Number(req.query.limite) || 5;
-
-    try {
-        // Contar total de citas activas para este paciente
-        const totalCitas = await CitaMedica.count({
-            where: {
-                rut_paciente: rut_paciente,
-                estado: {
-                    [Op.or]: ['en_curso', 'pagado', 'terminado']
-                },
-                estado_actividad: 'activo' // Solo considerar citas activas
-            }
-        });
-
-        // Obtener las citas activas con paginación y detalles de médico y paciente
-        const citas = await CitaMedica.findAll({
-            where: {
-                rut_paciente: rut_paciente,
-                estado: {
-                    [Op.or]: ['en_curso', 'pagado', 'terminado']
-                },
-                estado_actividad: 'activo' // Solo considerar citas activas
-            },
-            include: [
-                {
-                    model: Usuario,
-                    as: 'paciente',
-                    attributes: ['nombre', 'apellidos']
-                },
-                {
-                    model: Medico,
-                    as: 'medico',
-                    attributes: ['nombre', 'apellidos']
-                }
-            ],
-            attributes: { exclude: ['rut_paciente', 'rut_medico'] },
-            offset: desde,
-            limit: limite
-        });
-
-        if (!citas || citas.length === 0) {
-            return res.status(404).json({
-                ok: false,
-                msg: 'No se encontraron citas activas para este paciente',
-            });
-        }
-
-        res.json({
-            ok: true,
-            citas,
-            total: totalCitas
-        });
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({
-            ok: false,
-            msg: 'Error interno del servidor',
-        });
-    }
-};
-
-
-
-getCitaFactura = async (req: Request, res: Response) => {
-    const idCita = parseInt(req.params.idCita);
-  
-    if (!idCita) {
-        return res.status(400).json({
-            ok: false,
-            mensaje: 'Es necesario el ID de la cita médica'
-        });
-    }
-
-    try {
-        const citaMedica = await CitaMedica.findOne({
-            where: { idCita },
-            include: [
-                {
-                    model: Factura,
-                    as: 'factura',
-                    required: false  // Esto es para permitir citas sin factura
-                },
-                {
-                    model: Medico,
-                    as: 'medico',
-                    attributes: ['nombre', 'apellidos', 'especialidad_medica']  // Solo incluir los atributos necesarios
-                },
-                {
-                    model: Usuario,
-                    as: 'paciente',
-                    attributes: ['nombre', 'apellidos', 'email']  // Solo incluir los atributos necesarios
-                },
-               
-            ]
-        });
-    
-
-        if (!citaMedica) {
-            return res.status(404).json({
-                ok: false,
-                mensaje: 'Cita médica no encontrada'
-            });
-        }
-
-        return res.json({
-            ok: true,
-            citaMedica
-        });
-    } catch (error) {
-      
-        if (error instanceof Error) {
-            console.error('Error al obtener la cita médica y su factura:', error.message);
-            return res.status(500).json({
-                ok: false,
-                mensaje: 'Error al obtener la cita médica y su factura',
-                error: error.message
-            });
-        } else {
-            // 
-            console.error('Error inesperado al obtener la cita médica y su factura');
-            return res.status(500).json({
-                ok: false,
-                mensaje: 'Error inesperado al obtener la cita médica y su factura'
-            });
-        }
-    }
-};
-
-
-
-
-
-
-        
-
-        public crearCita = async( req: Request, res: Response ) => {
-            console.log("entro a crearcita");
-          let citaData = req.body.cita; 
-          console.log(citaData);
-
-          try {
-   
-              const citaExistente = await CitaMedica.findByPk(citaData.idCita);
-                  console.log(citaExistente);
-              if (citaExistente) {
-                  return res.status(400).json({
-                      ok: false,
-                      msg: 'Ya existe una cita con el mismo ID',
-                  });
-              }
-                  
-              // Crea una nueva cita
-              const nuevaCita = await CitaMedica.create(citaData);
-                  console.log(nuevaCita);
-              res.json({
-                  ok: true,
-                  cita: nuevaCita,
-              });
-          } catch (error) {
-              console.log(error);
-              res.status(500).json({
-                  ok: false,
-                  msg: 'Hable con el administrador',
-              });
-          }
-      };
-
-
-      verificarCitasUsuario = async(rut_paciente: string): Promise<boolean> => {
-        console.log("entro a  verificarCitasUsuario");
+    /**
+     * Obtiene las citas de un médico específico con paginación
+     */
+    public getCitasMedico = async (req: Request, res: Response) => {
         try {
-            const citaExistente = await CitaMedica.findOne({
-                where: {
-                    rut_paciente,
-                    estado: {
-                        [Op.or]: ['pagado', 'en_curso']
-                    },
-                    estado_actividad: 'activo' // Solo considerar citas activas
-                }
+            const { rut_medico } = req.params;
+            const desde = Number(req.query.desde) || 0;
+            const limite = Number(req.query.limite) || 5;
+
+            const resultado = await citaService.getCitasMedico(rut_medico, desde, limite);
+
+            return ResponseHelper.successWithCustomData(res, {
+                citas: resultado.citas,
+                total: resultado.count
             });
-    
-            return !!citaExistente;
-        } catch (error) {
-            console.error('Error al verificar las citas del usuario:', error);
-            throw error; // Manejo del error
+        } catch (error: any) {
+            console.error('Error al obtener citas del médico:', error);
+
+            if (error.message === 'No se encontraron citas activas para este médico') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            return ResponseHelper.serverError(res, 'Error al obtener citas del médico', error);
+        }
+    };
+
+
+    /**
+     * Obtiene las citas de un paciente específico con paginación
+     */
+    public getCitasPaciente = async (req: Request, res: Response) => {
+        try {
+            const { rut_paciente } = req.params;
+            const desde = Number(req.query.desde) || 0;
+            const limite = Number(req.query.limite) || 5;
+
+            const resultado = await citaService.getCitasPaciente(rut_paciente, desde, limite);
+
+            return ResponseHelper.successWithCustomData(res, {
+                citas: resultado.citas,
+                total: resultado.count
+            });
+        } catch (error: any) {
+            console.error('Error al obtener citas del paciente:', error);
+
+            if (error.message === 'No se encontraron citas activas para este paciente') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            return ResponseHelper.serverError(res, 'Error al obtener citas del paciente', error);
+        }
+    };
+
+
+
+    /**
+     * Obtiene una cita con su factura y relaciones completas
+     */
+    getCitaFactura = async (req: Request, res: Response) => {
+        try {
+            const idCita = parseInt(req.params.idCita);
+
+            const citaMedica = await citaService.getCitaFactura(idCita);
+
+            return ResponseHelper.successWithCustomData(res, { citaMedica });
+        } catch (error: any) {
+            console.error('Error al obtener la cita médica y su factura:', error);
+
+            if (error.message === 'Es necesario el ID de la cita médica') {
+                return ResponseHelper.badRequest(res, error.message);
+            }
+
+            if (error.message === 'Cita médica no encontrada') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            return ResponseHelper.serverError(res, 'Error al obtener la cita médica y su factura', error);
+        }
+    };
+
+
+
+
+
+
+        
+
+    /**
+     * Crea una nueva cita médica (usado por administradores)
+     */
+    public crearCita = async (req: Request, res: Response) => {
+        try {
+            const citaData = req.body.cita;
+
+            const nuevaCita = await citaService.crearCita(citaData);
+
+            return ResponseHelper.successWithCustomData(res, { cita: nuevaCita });
+        } catch (error: any) {
+            console.error('Error al crear cita:', error);
+
+            if (error.message === 'Ya existe una cita con el mismo ID') {
+                return ResponseHelper.badRequest(res, error.message);
+            }
+
+            return ResponseHelper.serverError(res, 'Error al crear la cita médica', error);
+        }
+    };
+
+
+    /**
+     * Crea una cita médica desde la perspectiva del paciente
+     * Verifica que el paciente no tenga citas activas antes de crear
+     */
+    crearCitaPaciente = async (req: Request, res: Response) => {
+        try {
+            const { rutMedico, hora_inicio, hora_fin, idTipoCita, especialidad, rutPaciente, fecha } = req.body;
+
+            const resultado = await citaService.crearCitaPaciente({
+                rutMedico,
+                hora_inicio,
+                hora_fin,
+                idTipoCita,
+                especialidad,
+                rutPaciente,
+                fecha
+            });
+
+            return ResponseHelper.created(res, { cita: resultado }, 'Cita creada exitosamente');
+        } catch (error: any) {
+            console.error('Error al crear la cita médica:', error);
+
+            if (error.message === 'Ya tienes una cita programada. Debes asistir y terminar tu cita actual para agendar otra.') {
+                return ResponseHelper.badRequest(res, error.message);
+            }
+
+            if (error.message === 'Todos los campos son requeridos') {
+                return ResponseHelper.badRequest(res, error.message);
+            }
+
+            return ResponseHelper.serverError(res, 'Error al crear la cita médica', error);
         }
     };
     
-//ESTE METODO ES CUANDO EL PACIENTE AGENDA UNA CITA
-      crearCitaPaciente = async (req: Request, res: Response) => {
-       console.log("entro a crear cita paciente",req);
-        const { rutMedico, hora_inicio, hora_fin, idTipoCita, especialidad, rutPaciente, fecha } = req.body;
-        console.log(rutMedico, hora_inicio, hora_fin, idTipoCita, especialidad, rutPaciente, fecha);
-        const puedeAgendar = await this.verificarCitasUsuario(rutPaciente);
-        console.log("puede agendar",puedeAgendar);
-        if (!puedeAgendar) {
-            try {
-                // Crea la cita médica con el estado no_pagado
-                const cita = await CitaMedica.create({
-                    rut_paciente: rutPaciente,
-                    rut_medico: rutMedico,
-                    fecha: fecha, 
-                    hora_inicio,
-                    hora_fin,
-                    estado: 'no_pagado', 
-                    motivo: especialidad, 
-                    idTipoCita,
-                });
-    
-              console.log("cita creada",cita);
-               
-                console.log('Cita creada con ID:', cita.idCita);
-                return res.status(201).json({
-                    ok: true,
-                    cita: {
-                        idCita: cita.idCita, 
-                        
-                    }
-                });
-            } catch (error) {
-                console.error('Error al crear la cita médica:', error);
-                return res.status(500).json({
-                    ok: false,
-                    mensaje: 'Error al crear la cita médica',
-                    error
-                });
-            }
-        } else {
-            // Enviar mensaje al usuario informándole que ya tiene una cita programada
-            return res.status(400).json({
-                ok: false,
-                mensaje: "Ya tienes una cita programada. Debes asistir y terminar tu cita actual para agendar otra."
+      
+      
+      
+      
+
+
+
+    /**
+     * Actualiza una cita existente
+     */
+    public putCita = async (req: Request, res: Response) => {
+        try {
+            const idCita = parseInt(req.params.id);
+            const citaData = req.body;
+
+            const citaActualizada = await citaService.actualizarCita(idCita, citaData);
+
+            return ResponseHelper.successWithCustomData(res, {
+                cita: citaActualizada,
+                msg: 'Cita actualizada correctamente'
             });
+        } catch (error: any) {
+            console.error('Error al actualizar cita:', error);
+
+            if (error.message === 'Cita no encontrada') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            return ResponseHelper.serverError(res, 'Error al actualizar la cita', error);
         }
     };
-    
-      
-      
-      
-      
-
-
-
-          public putCita= async (req: Request, res: Response) => {
-            try {
-              const { id } = req.params;
-              const { body } = req;
-
-              // Buscar el médico por su ID
-              const cita = await CitaMedica.findByPk(id);
         
-              if (!cita) {
-                return res.status(404).json({
-                  ok: false,
-                  msg: 'cita no encontrada',
-                });
-              }
-        
-              // Actualizar los campos del médico con los valores proporcionados en el cuerpo de la solicitud
-              await cita.update(body);
-        
-              res.json({
-                ok: true,
-                msg: 'Médico actualizado correctamente',
-                cita,
-              });
-            } catch (error) {
-              console.error(error);
-              res.status(500).json({
-                ok: false,
-                msg: 'Hable con el administrador',
-              });
+
+
+
+    /**
+     * Elimina lógicamente una cita (soft delete)
+     */
+    public deleteCita = async (req: Request, res: Response) => {
+        try {
+            const idCita = parseInt(req.params.id);
+
+            const resultado = await citaService.eliminarCita(idCita);
+
+            return ResponseHelper.success(res, undefined, resultado.mensaje);
+        } catch (error: any) {
+            console.error('Error al eliminar cita:', error);
+
+            if (error.message?.includes('No existe una cita con el id')) {
+                return ResponseHelper.notFound(res, error.message);
             }
-          };
-        
+
+            return ResponseHelper.serverError(res, 'Error al eliminar cita', error);
+        }
+    };
 
 
+    /**
+     * Valida la previsión del paciente el día de la cita (uso presencial)
+     * Permite 3 escenarios:
+     * 1. Validó correctamente (trae documentos) -> marca prevision_validada = true
+     * 2. No trajo documentos -> registra diferencia_pagada_efectivo
+     * 3. Mintió sobre previsión -> actualiza tipo_prevision real del usuario
+     */
+    public validarPrevision = async (req: Request, res: Response) => {
+        try {
+            const idCita = parseInt(req.params.idCita);
+            const {
+                validado,              // true/false si validó correctamente
+                diferenciaEfectivo,    // monto pagado en efectivo si no validó
+                tipoPrevisionReal,     // tipo real si mintió
+                observaciones          // comentarios adicionales
+            } = req.body;
 
-          public deleteCita = async (req: Request, res: Response) => {
-            const { id } = req.params;
-        
-            try {
-                const cita = await CitaMedica.findByPk(id);
-        
-                if (!cita) {
-                    return res.status(404).json({
-                        msg: 'No existe una cita con el id ' + id,
-                    });
-                }
-        
-                // Cambiar el estado de la cita a 'inactivo'
-                await cita.update({ estado_actividad: 'inactivo' });
-        
-                res.json({ msg: 'Cita actualizada a inactivo correctamente' });
-            } catch (error) {
-                console.error(error);
-                res.status(500).json({
-                    msg: 'Error en el servidor',
-                });
+            const resultado = await citaService.validarPrevision(
+                idCita,
+                validado,
+                diferenciaEfectivo,
+                tipoPrevisionReal,
+                observaciones
+            );
+
+            return ResponseHelper.successWithCustomData(res, {
+                cita: resultado.cita,
+                usuario: resultado.usuario,
+                mensaje: resultado.mensaje
+            });
+        } catch (error: any) {
+            console.error('Error al validar previsión:', error);
+
+            if (error.message === 'Cita no encontrada') {
+                return ResponseHelper.notFound(res, error.message);
             }
-        };
-        
+
+            if (error.message === 'Esta cita no requiere validación de previsión') {
+                return ResponseHelper.badRequest(res, error.message);
+            }
+
+            if (error.message === 'La previsión de esta cita ya fue validada anteriormente') {
+                return ResponseHelper.badRequest(res, error.message);
+            }
+
+            return ResponseHelper.serverError(res, 'Error al validar la previsión', error);
+        }
+    };
 }

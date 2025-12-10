@@ -12,15 +12,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CitaRepository = void 0;
 const medico_1 = __importDefault(require("../models/medico"));
 const rol_1 = __importDefault(require("../models/rol"));
-const cita_medica_1 = __importDefault(require("../models/cita_medica"));
-const horario_medico_1 = __importDefault(require("../models/horario_medico"));
 const sequelize_1 = require("sequelize");
-const tipo_cita_1 = __importDefault(require("../models/tipo_cita"));
+/**
+ * Repositorio para manejar el acceso a datos de médicos
+ * RESPONSABILIDAD: Solo operaciones de base de datos, sin lógica de negocio
+ */
 class MedicoRepository {
-    // Obtener médicos paginados
+    /**
+     * Obtener médicos activos paginados con su rol
+     */
     findActiveMedicos(desde, limit = 5) {
         return __awaiter(this, void 0, void 0, function* () {
             return medico_1.default.findAll({
@@ -35,13 +37,17 @@ class MedicoRepository {
             });
         });
     }
-    // Contar médicos activos
+    /**
+     * Contar médicos activos
+     */
     countActiveMedicos() {
         return __awaiter(this, void 0, void 0, function* () {
             return medico_1.default.count({ where: { estado: 'activo' } });
         });
     }
-    // Obtener todos los médicos activos (sin paginación)
+    /**
+     * Obtener todos los médicos activos (sin paginación)
+     */
     findAllActiveMedicos() {
         return __awaiter(this, void 0, void 0, function* () {
             return medico_1.default.findAll({
@@ -54,49 +60,52 @@ class MedicoRepository {
             });
         });
     }
-    // Obtener médicos por especialidad (con especialidades válidas)
-    findMedicosByValidEspecialidades() {
+    /**
+     * Obtener médicos activos con especialidades específicas
+     * Filtra por especialidades proporcionadas
+     */
+    findActiveMedicosByEspecialidades(especialidades) {
         return __awaiter(this, void 0, void 0, function* () {
-            // Obtener especialidades válidas
-            const especialidadesValidas = yield tipo_cita_1.default.findAll({
-                attributes: ['especialidad_medica']
-            });
-            const especialidades = especialidadesValidas.map(ec => ec.especialidad_medica);
-            // Obtener médicos activos
-            const medicos = yield medico_1.default.findAll({
+            return medico_1.default.findAll({
                 attributes: ['rut', 'nombre', 'apellidos', 'especialidad_medica'],
                 include: [{
                         model: rol_1.default,
                         as: 'rol',
                         attributes: ['codigo']
                     }],
-                where: { estado: 'activo' }
-            });
-            // Procesar para compatibilidad y filtrar
-            return medicos
-                .map(medico => {
-                const medicoJSON = medico.toJSON();
-                if (medicoJSON.rol && medicoJSON.rol.codigo) {
-                    medicoJSON.rol = medicoJSON.rol.codigo;
+                where: {
+                    estado: 'activo',
+                    especialidad_medica: { [sequelize_1.Op.in]: especialidades }
                 }
-                return medicoJSON;
-            })
-                .filter(medico => especialidades.includes(medico.especialidad_medica));
+            });
         });
     }
-    // Buscar médico por ID
-    findById(rut) {
+    /**
+     * Buscar médico por RUT con su rol
+     */
+    findById(rut, includeRole = true) {
         return __awaiter(this, void 0, void 0, function* () {
-            return medico_1.default.findByPk(rut, {
+            const options = includeRole ? {
                 include: [{
                         model: rol_1.default,
                         as: 'rol',
                         attributes: ['id', 'nombre', 'codigo']
                     }]
-            });
+            } : {};
+            return medico_1.default.findByPk(rut, options);
         });
     }
-    // Buscar por email
+    /**
+     * Buscar médico por RUT sin relaciones
+     */
+    findByRut(rut) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return medico_1.default.findByPk(rut);
+        });
+    }
+    /**
+     * Buscar médico por email
+     */
     findByEmail(email) {
         return __awaiter(this, void 0, void 0, function* () {
             return medico_1.default.findOne({
@@ -109,20 +118,34 @@ class MedicoRepository {
             });
         });
     }
-    // Buscar por teléfono
+    /**
+     * Buscar médico por teléfono
+     */
     findByPhone(telefono) {
         return __awaiter(this, void 0, void 0, function* () {
             return medico_1.default.findOne({ where: { telefono } });
         });
     }
-    // Crear médico
-    createMedico(medicoData) {
+    /**
+     * Crear un nuevo médico
+     */
+    create(medicoData) {
         return __awaiter(this, void 0, void 0, function* () {
             return medico_1.default.create(medicoData);
         });
     }
-    // Actualizar médico
-    updateMedico(rut, data) {
+    /**
+     * Actualizar un médico
+     */
+    update(medico, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return medico.update(data);
+        });
+    }
+    /**
+     * Actualizar médico por RUT
+     */
+    updateByRut(rut, data) {
         return __awaiter(this, void 0, void 0, function* () {
             const medico = yield medico_1.default.findByPk(rut);
             if (!medico)
@@ -130,43 +153,49 @@ class MedicoRepository {
             return medico.update(data);
         });
     }
-    // Eliminar médico (marcar como inactivo y actualizar entidades relacionadas)
-    deleteMedico(rut) {
+    /**
+     * Marcar médico como inactivo (soft delete)
+     */
+    softDelete(rut) {
         return __awaiter(this, void 0, void 0, function* () {
             const medico = yield medico_1.default.findByPk(rut);
             if (!medico)
                 return null;
-            // Actualizar citas médicas en estados específicos
-            yield cita_medica_1.default.update({ estado_actividad: 'inactivo' }, {
-                where: {
-                    rut_medico: rut,
-                    estado: { [sequelize_1.Op.in]: ['terminado', 'no_pagado', 'no_asistio'] }
-                }
-            });
-            // Eliminar horarios del médico
-            yield horario_medico_1.default.destroy({ where: { rut_medico: rut } });
-            // Marcar médico como inactivo
             return medico.update({ estado: 'inactivo' });
         });
     }
-    // Cambiar contraseña
-    changePassword(rut, newPassword) {
+    /**
+     * Buscar médico con opciones personalizadas
+     */
+    findOne(options) {
         return __awaiter(this, void 0, void 0, function* () {
-            const medico = yield medico_1.default.findByPk(rut);
-            if (!medico)
-                return null;
-            return medico.update({ password: newPassword });
+            return medico_1.default.findOne(options);
         });
     }
+    /**
+     * Buscar todos los médicos con opciones personalizadas
+     */
+    findAll(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return medico_1.default.findAll(options);
+        });
+    }
+    /**
+     * Contar médicos con opciones específicas
+     */
+    count(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return medico_1.default.count(options);
+        });
+    }
+    /**
+     * Actualizar médicos que cumplen con las condiciones especificadas
+     */
     updateWhere(where, data) {
         return __awaiter(this, void 0, void 0, function* () {
             return medico_1.default.update(data, { where });
         });
     }
 }
-// Ejemplo para CitaRepository
-class CitaRepository {
-}
-exports.CitaRepository = CitaRepository;
 exports.default = new MedicoRepository();
 //# sourceMappingURL=medico.repository.js.map

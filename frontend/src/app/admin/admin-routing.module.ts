@@ -21,6 +21,8 @@ import { AgregarInfoClinicaComponent } from './pages/info-clinica/agregar-info-c
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { VerFacturasComponent } from './pages/facturas-medicas/ver-facturas/ver-facturas.component';
 import { ImprimirFacturaComponent } from './pages/facturas-medicas/imprimir-factura/imprimir-factura.component';
+import { ValidarPrevisionComponent } from './pages/validar-prevision/validar-prevision.component';
+import { EditarPerfilMedicoComponent } from './pages/editar-perfil-medico/editar-perfil-medico.component';
 
 
 const routes: Routes = [
@@ -59,7 +61,12 @@ const routes: Routes = [
         component: AgregarmedicoComponent,
         canActivate: [AuthGuard, AdminGuard]
       },
-      
+      {
+        path: 'medico/:rut/editar-perfil',
+        component: EditarPerfilMedicoComponent,
+        canActivate: [AuthGuard, AdminGuard]
+      },
+
 
 
 
@@ -80,10 +87,13 @@ const routes: Routes = [
       { path: 'agregar-tipo-cita', component: AgregarTipoCitaComponent, canActivate: [AuthGuard, AdminGuard] },
       { path: 'editar-tipoCita/:id', component: AgregarTipoCitaComponent, canActivate: [AuthGuard, AdminGuard] },
 
-      
-    
+      // Ruta para validar previsión
+      { path: 'validar-prevision', component: ValidarPrevisionComponent, canActivate: [AuthGuard, AdminGuard] },
 
-    
+
+
+
+
     ]
   }
 ];

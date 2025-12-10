@@ -70,6 +70,58 @@ CitaMedica.init({
         allowNull: false,
         defaultValue: 'activo'
     },
+    // Campos de precios y descuentos
+    precio_original: {
+        type: sequelize_1.DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        comment: 'Precio original sin descuento (precio particular)'
+    },
+    precio_final: {
+        type: sequelize_1.DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        comment: 'Precio final que el paciente pagó (con descuento si aplica)'
+    },
+    tipo_prevision_aplicada: {
+        type: sequelize_1.DataTypes.ENUM('Fonasa', 'Isapre', 'Particular'),
+        allowNull: true,
+        comment: 'Tipo de previsión que se aplicó para esta cita'
+    },
+    descuento_aplicado: {
+        type: sequelize_1.DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        defaultValue: 0,
+        comment: 'Monto del descuento aplicado en pesos chilenos'
+    },
+    porcentaje_descuento: {
+        type: sequelize_1.DataTypes.DECIMAL(5, 2),
+        allowNull: true,
+        defaultValue: 0,
+        comment: 'Porcentaje de descuento aplicado (0-100)'
+    },
+    // Campos de validación de previsión
+    requiere_validacion_prevision: {
+        type: sequelize_1.DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: 'Indica si el paciente debe traer documentos de previsión'
+    },
+    prevision_validada: {
+        type: sequelize_1.DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: 'Indica si se validó la previsión presencialmente'
+    },
+    diferencia_pagada_efectivo: {
+        type: sequelize_1.DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        defaultValue: 0,
+        comment: 'Diferencia pagada en efectivo si no presentó documentos'
+    },
+    observaciones_validacion: {
+        type: sequelize_1.DataTypes.TEXT,
+        allowNull: true,
+        comment: 'Observaciones sobre la validación de previsión'
+    },
 }, {
     sequelize: connection_1.default,
     modelName: 'CitaMedica',

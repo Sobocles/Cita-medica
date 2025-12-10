@@ -9,7 +9,13 @@ class TipoCita extends Model {
   public precio!: number;
   public especialidad_medica!: string;
   public duracion_cita!: number;
-  public estado!: string; 
+  public estado!: string;
+
+  // Precios diferenciados por tipo de previsión
+  public precio_fonasa?: number;
+  public precio_isapre?: number;
+  public precio_particular?: number;
+
   public medicos?: Medico[];
 }
 
@@ -39,6 +45,22 @@ TipoCita.init(
       type: DataTypes.STRING,
       allowNull: true,
       defaultValue: 'activo' // Estado por defecto es 'activo'
+    },
+    // Precios diferenciados por tipo de previsión
+    precio_fonasa: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      comment: 'Precio para pacientes con Fonasa'
+    },
+    precio_isapre: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      comment: 'Precio para pacientes con Isapre'
+    },
+    precio_particular: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: true,
+      comment: 'Precio para pacientes particulares'
     },
   },
   {

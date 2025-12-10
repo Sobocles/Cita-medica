@@ -4,7 +4,6 @@ import { FormGroup, FormControl, Validators, FormBuilder } from '@angular/forms'
 import { CitaMedicaService } from '../../services/cita-medica.service';
 import { CitasResponse } from '../../interface/cita_medica';
 import { Router } from '@angular/router';
-import Swal from 'sweetalert2';
 import { PacienteService } from '../../services/usuario.service';
 import { MedicoService } from '../../services/medico.service';
 import { TipoCitaService } from '../../services/tipo-cita.service';
@@ -14,6 +13,8 @@ import { tipoCitaResponse } from '../../interface/tipoCita';
 import { HorarioMedicoService } from '../../services/horario-medico.service';
 import { CitasResponsex } from '../../interface/cita_medicaResponse';
 import { HorarioClinicaService } from 'src/app/pacientes/services/horario-clinica.service';
+import { DateUtilsService } from 'src/app/shared/services/date-utils.service';
+import { ErrorHandlerService } from '../../../../shared/services/error-handler.service';
 
 export interface Especialidad {
   especialidad_medica: string;
@@ -53,7 +54,18 @@ export class AgregarCitaMedicaComponent implements OnInit {
 
 
 
-  constructor(private fb: FormBuilder, private citaMedicaService: CitaMedicaService, private router: Router, private PacienteService: PacienteService, private TipoCitaService: TipoCitaService, private MedicoService: MedicoService, private HorarioMedicoService: HorarioMedicoService, private horarioClinicaService: HorarioClinicaService) { }
+  constructor(
+    private fb: FormBuilder,
+    private citaMedicaService: CitaMedicaService,
+    private router: Router,
+    private PacienteService: PacienteService,
+    private TipoCitaService: TipoCitaService,
+    private MedicoService: MedicoService,
+    private HorarioMedicoService: HorarioMedicoService,
+    private horarioClinicaService: HorarioClinicaService,
+    private dateUtils: DateUtilsService,
+    private errorHandler: ErrorHandlerService
+  ) { }
 
   ngOnInit(): void {
     this.formulario= this.fb.group({
@@ -77,14 +89,15 @@ export class AgregarCitaMedicaComponent implements OnInit {
   }
 
    cargarDisponibilidad() {
-  this.horarioClinicaService.obtenerHorarioEspecialidades().subscribe(
-    (horarios: any) => {
+  this.horarioClinicaService.obtenerHorarioEspecialidades().subscribe({
+    next: (horarios: any) => {
       this.horariosEspecialidades = horarios;
     },
-    error => {
-      console.error('Error al obtener horarios de especialidades:', error);
+    error: (err) => {
+      console.error('Error al obtener horarios de especialidades:', err);
+      this.errorHandler.showError(err, 'Error al cargar horarios de especialidades');
     }
-  );
+  });
    }
   onMedicoSelected(event: any): void {
    
@@ -117,22 +130,16 @@ export class AgregarCitaMedicaComponent implements OnInit {
       }
     };
     console.log('aqui esta la nueva cita',nuevaCita);
-  
-    this.citaMedicaService.crearCitaMedica(nuevaCita).subscribe(
-      response => {
-        Swal.fire('Exito', 'Cita creada exitosamente!', 'success');
+
+    this.citaMedicaService.crearCitaMedica(nuevaCita).subscribe({
+      next: (response) => {
+        this.errorHandler.showSuccess('Cita creada exitosamente', '¡Éxito!');
         this.router.navigateByUrl('/gestionar-cita');
       },
-      error => {
-        // Verifica si el error es específicamente por falta de médicos disponibles
-        if (error.error && error.error.msg) {
-          Swal.fire('Error', error.error.msg, 'error');
-        } else {
-          // Mensaje de error genérico si no es por falta de médicos disponibles
-          Swal.fire('Error', 'Hubo un error al guardar la cita', 'error');
-        }
+      error: (err) => {
+        this.errorHandler.showError(err, 'Error al guardar la cita');
       }
-    );
+    });
   }
   
   
@@ -143,21 +150,8 @@ export class AgregarCitaMedicaComponent implements OnInit {
       this.onChangeData();  // Llama a onChangeData cuando se selecciona "Consulta general"
     }
   }
-  
-  formatDate(dateString: string): string {
-    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
-    const date = new Date(dateString);
-    const dayName = days[date.getDay()];
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-
-    return `${dayName} ${day} de ${month} del ${year}`;
-}
-
-formularioValido(): boolean {
+  formularioValido(): boolean {
   return this.selectedPaciente && this.selectedEspecialidad &&
          this.selectedDate && this.selectedMedico && this.selectedMedico.rutMedico;
 }
@@ -180,40 +174,44 @@ formularioValido(): boolean {
 
     console.log('este es el motivo', this.motivo);
 
-    const selectedDateObj = new Date(this.selectedDate);
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0); // Establecer la hora actual a medianoche
-
-    // Verifica si la fecha seleccionada es en el pasado o es hoy
-    if (selectedDateObj < currentDate) {
-        Swal.fire('Error', 'No puede seleccionar una fecha pasada para la cita o el dia actual.', 'error');
+    // Validar fecha usando DateUtilsService
+    if (this.dateUtils.isPastDate(this.selectedDate)) {
+        this.errorHandler.showValidationError(
+          'No puede seleccionar una fecha pasada para la cita',
+          'Fecha no válida'
+        );
         return; // Detiene la ejecución posterior
-    } else if (selectedDateObj.getTime() === currentDate.getTime()) {
-        Swal.fire('Advertencia', 'Ha seleccionado el día actual. Verifique la disponibilidad de los médicos para hoy.', 'warning');
+    } else if (this.dateUtils.isToday(this.selectedDate)) {
+        this.errorHandler.showWarning(
+          'Ha seleccionado el día actual. Verifique la disponibilidad de los médicos para hoy',
+          'Advertencia'
+        );
     }
 
     if (this.selectedDate) {
         console.log('ESTa es la fecha selecccionada', this.selectedDate);
 
-        this.HorarioMedicoService.buscarHorarioDisponible(formData).subscribe(
-            (response) => {
+        this.HorarioMedicoService.buscarHorarioDisponible(formData).subscribe({
+            next: (response) => {
                 this.medicosDisponibles = response.bloques;
                 console.log('ARRAY DE MEDICOS DISPONIBLES',this.medicosDisponibles)
                 this.medicosDisponibles.forEach((medico) => {
                   console.log('RUT del médico:', medico.rutMedico);
                 });
-                
-           
+
                 if (this.medicosDisponibles.length === 0) {
-                  const formattedDate = this.formatDate(this.selectedDate);
-                  Swal.fire('Información', `No hay médicos disponibles para el ${formattedDate}, para saber en qué horario trabajan sus médicos consulte sus horarios`, 'info');
+                  const formattedDate = this.dateUtils.formatDate(this.selectedDate);
+                  this.errorHandler.showInfo(
+                    `No hay médicos disponibles para el ${formattedDate}, para saber en qué horario trabajan sus médicos consulte sus horarios`,
+                    'Información'
+                  );
               }
             },
-            (error) => {
-                console.error('Error obteniendo médicos disponibles:', error);
-                Swal.fire('Error', 'Error obteniendo médicos disponibles', 'error');
+            error: (err) => {
+                console.error('Error obteniendo médicos disponibles:', err);
+                this.errorHandler.showError(err, 'Error al obtener médicos disponibles');
             }
-        );
+        });
     }
 }
 

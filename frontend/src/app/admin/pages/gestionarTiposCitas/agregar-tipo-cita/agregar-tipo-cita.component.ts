@@ -27,6 +27,10 @@ export class AgregarTipoCitaComponent {
       idTipo: [''], // Se usará en edición; en creación se eliminará
       especialidad_medica: ['', Validators.required],
       precio: ['', [Validators.required, Validators.pattern(/^(?!0\d)\d+$/)]],
+      // Precios diferenciados por tipo de previsión
+      precio_fonasa: ['', [Validators.pattern(/^(?!0\d)\d+$/)]],
+      precio_isapre: ['', [Validators.pattern(/^(?!0\d)\d+$/)]],
+      precio_particular: ['', [Validators.pattern(/^(?!0\d)\d+$/)]],
       duracion_cita: ['', [
         Validators.required,
         Validators.pattern(/^\d+$/),
@@ -50,6 +54,9 @@ export class AgregarTipoCitaComponent {
               idTipo: tipoCita.idTipo,
               especialidad_medica: tipoCita.especialidad_medica,
               precio: tipoCita.precio,
+              precio_fonasa: tipoCita.precio_fonasa || '',
+              precio_isapre: tipoCita.precio_isapre || '',
+              precio_particular: tipoCita.precio_particular || '',
               duracion_cita: tipoCita.duracion_cita
             });
           },

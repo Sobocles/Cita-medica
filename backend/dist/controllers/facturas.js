@@ -17,31 +17,23 @@ const factura_1 = __importDefault(require("../models/factura"));
 const cita_medica_1 = __importDefault(require("../models/cita_medica"));
 const usuario_1 = __importDefault(require("../models/usuario"));
 const medico_1 = __importDefault(require("../models/medico"));
+const response_helper_1 = __importDefault(require("../helpers/response.helper"));
 function eliminarFactura(req, res) {
     return __awaiter(this, void 0, void 0, function* () {
         const { id } = req.params;
         try {
             const factura = yield factura_1.default.findByPk(id);
             if (!factura) {
-                return res.status(404).json({
-                    ok: false,
-                    mensaje: 'Factura no encontrada'
-                });
+                return response_helper_1.default.notFound(res, 'Factura no encontrada');
             }
             // Cambiar el estado de la factura a 'inactivo'
             factura.estado = 'inactivo';
             yield factura.save();
-            res.json({
-                ok: true,
-                mensaje: 'Factura actualizada a inactivo con éxito'
-            });
+            return response_helper_1.default.success(res, undefined, 'Factura actualizada a inactivo con éxito');
         }
         catch (error) {
             console.error('Error al actualizar el estado de la factura:', error);
-            res.status(500).json({
-                ok: false,
-                mensaje: 'Error interno del servidor'
-            });
+            return response_helper_1.default.serverError(res, 'Error al actualizar estado de factura', error);
         }
     });
 }
@@ -79,7 +71,7 @@ function getAllFacturas(req, res) {
                 limit: limite
             });
             if (!facturas || facturas.length === 0) {
-                return res.status(404).json({ message: 'No se encontraron facturas' });
+                return response_helper_1.default.notFound(res, 'No se encontraron facturas');
             }
             // Formatear las facturas para la respuesta
             const facturasFormateadas = facturas.map(factura => {
@@ -105,16 +97,14 @@ function getAllFacturas(req, res) {
                     }
                 });
             });
-            // Enviar la respuesta
-            res.json({
-                ok: true,
+            return response_helper_1.default.successWithCustomData(res, {
                 facturas: facturasFormateadas,
                 total: totalFacturas
             });
         }
         catch (error) {
             console.error('Error al obtener las facturas:', error);
-            res.status(500).json({ error: 'Error interno del servidor' });
+            return response_helper_1.default.serverError(res, 'Error al obtener facturas', error);
         }
     });
 }
@@ -146,10 +136,7 @@ function obtenerFacturaPorId(req, res) {
                 attributes: ['id_factura', 'payment_method_id', 'transaction_amount', 'monto_pagado', 'fecha_pago']
             });
             if (!factura) {
-                return res.status(404).json({
-                    ok: false,
-                    mensaje: 'Factura no encontrada'
-                });
+                return response_helper_1.default.notFound(res, 'Factura no encontrada');
             }
             // Crear un objeto con la información detallada de la factura
             const facturaInfo = {
@@ -166,17 +153,11 @@ function obtenerFacturaPorId(req, res) {
                 montoPagado: factura.monto_pagado,
                 fecha_pago: factura.fecha_pago
             };
-            res.json({
-                ok: true,
-                factura: facturaInfo
-            });
+            return response_helper_1.default.successWithCustomData(res, { factura: facturaInfo });
         }
         catch (error) {
             console.error('Error al obtener la factura:', error);
-            res.status(500).json({
-                ok: false,
-                mensaje: 'Error interno del servidor'
-            });
+            return response_helper_1.default.serverError(res, 'Error al obtener factura', error);
         }
     });
 }

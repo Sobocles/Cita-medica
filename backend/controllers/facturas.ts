@@ -3,35 +3,26 @@ import Factura from '../models/factura';
 import CitaMedica from '../models/cita_medica';
 import Usuario from '../models/usuario';
 import Medico from '../models/medico';
+import ResponseHelper from '../helpers/response.helper';
 
 export async function eliminarFactura(req: Request, res: Response) {
-
     const { id } = req.params;
-  
+
     try {
         const factura = await Factura.findByPk(id);
 
         if (!factura) {
-            return res.status(404).json({
-                ok: false,
-                mensaje: 'Factura no encontrada'
-            });
+            return ResponseHelper.notFound(res, 'Factura no encontrada');
         }
 
         // Cambiar el estado de la factura a 'inactivo'
         factura.estado = 'inactivo';
         await factura.save();
 
-        res.json({
-            ok: true,
-            mensaje: 'Factura actualizada a inactivo con éxito'
-        });
-    } catch (error) {
+        return ResponseHelper.success(res, undefined, 'Factura actualizada a inactivo con éxito');
+    } catch (error: any) {
         console.error('Error al actualizar el estado de la factura:', error);
-        res.status(500).json({
-            ok: false,
-            mensaje: 'Error interno del servidor'
-        });
+        return ResponseHelper.serverError(res, 'Error al actualizar estado de factura', error);
     }
 };
 
@@ -39,7 +30,7 @@ export async function getAllFacturas(req: Request, res: Response) {
     try {
         // Parámetros de paginación
         const desde = Number(req.query.desde) || 0;
-        const limite = 5; 
+        const limite = 5;
 
         // Contar el total de facturas
         const totalFacturas = await Factura.count();
@@ -69,7 +60,7 @@ export async function getAllFacturas(req: Request, res: Response) {
         });
 
         if (!facturas || facturas.length === 0) {
-            return res.status(404).json({ message: 'No se encontraron facturas' });
+            return ResponseHelper.notFound(res, 'No se encontraron facturas');
         }
 
         // Formatear las facturas para la respuesta
@@ -94,15 +85,13 @@ export async function getAllFacturas(req: Request, res: Response) {
             }
         }));
 
-        // Enviar la respuesta
-        res.json({
-            ok: true,
+        return ResponseHelper.successWithCustomData(res, {
             facturas: facturasFormateadas,
             total: totalFacturas
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error al obtener las facturas:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        return ResponseHelper.serverError(res, 'Error al obtener facturas', error);
     }
 }
 
@@ -110,7 +99,6 @@ export async function getAllFacturas(req: Request, res: Response) {
 
 export async function obtenerFacturaPorId(req: Request, res: Response) {
     const id = req.params.id;
-  
     const idfactura = parseInt(id);
 
     try {
@@ -136,10 +124,7 @@ export async function obtenerFacturaPorId(req: Request, res: Response) {
         });
 
         if (!factura) {
-            return res.status(404).json({
-                ok: false,
-                mensaje: 'Factura no encontrada'
-            });
+            return ResponseHelper.notFound(res, 'Factura no encontrada');
         }
 
         // Crear un objeto con la información detallada de la factura
@@ -158,19 +143,11 @@ export async function obtenerFacturaPorId(req: Request, res: Response) {
             fecha_pago: factura.fecha_pago
         };
 
-        res.json({
-            ok: true,
-            factura: facturaInfo
-        });
-    } catch (error) {
+        return ResponseHelper.successWithCustomData(res, { factura: facturaInfo });
+    } catch (error: any) {
         console.error('Error al obtener la factura:', error);
-        res.status(500).json({
-            ok: false,
-            mensaje: 'Error interno del servidor'
-        });
+        return ResponseHelper.serverError(res, 'Error al obtener factura', error);
     }
-
-
 };
 
 

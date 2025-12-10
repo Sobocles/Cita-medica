@@ -1,0 +1,406 @@
+<div class="container-fluid py-4">
+
+  <!-- Loading -->
+  <div *ngIf="cargando" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-3">Cargando información del médico...</p>
+  </div>
+
+  <!-- Contenido Principal -->
+  <div *ngIf="!cargando && medico">
+
+    <!-- Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h2 class="mb-0">
+              <i class="fa fa-user-md text-primary me-2"></i>
+              Editar Perfil Profesional
+            </h2>
+            <p class="text-muted mb-0">
+              {{ medico.nombreCompleto }} - {{ medico.especialidad_medica }}
+            </p>
+          </div>
+          <button class="btn btn-outline-secondary" (click)="volver()">
+            <i class="fa fa-arrow-left me-2"></i>
+            Volver
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulario -->
+    <form [formGroup]="perfilForm" (ngSubmit)="guardarCambios()">
+
+      <div class="row">
+
+        <!-- Columna Izquierda -->
+        <div class="col-md-8">
+
+          <!-- Información Profesional -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+              <h5 class="mb-0">
+                <i class="fa fa-graduation-cap me-2"></i>
+                Información Profesional
+              </h5>
+            </div>
+            <div class="card-body">
+
+              <div class="row">
+                <!-- Título Profesional -->
+                <div class="col-md-6 mb-3">
+                  <label for="titulo_profesional" class="form-label">Título Profesional</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="titulo_profesional"
+                    formControlName="titulo_profesional"
+                    placeholder="Ej: Médico Cirujano"
+                    [class.is-invalid]="esCampoInvalido('titulo_profesional')">
+                  <div class="invalid-feedback" *ngIf="esCampoInvalido('titulo_profesional')">
+                    {{ obtenerMensajeError('titulo_profesional') }}
+                  </div>
+                  <small class="text-muted">Máximo 100 caracteres</small>
+                </div>
+
+                <!-- Subespecialidad -->
+                <div class="col-md-6 mb-3">
+                  <label for="subespecialidad" class="form-label">Subespecialidad</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="subespecialidad"
+                    formControlName="subespecialidad"
+                    placeholder="Ej: Cardiología Intervencionista"
+                    [class.is-invalid]="esCampoInvalido('subespecialidad')">
+                  <div class="invalid-feedback" *ngIf="esCampoInvalido('subespecialidad')">
+                    {{ obtenerMensajeError('subespecialidad') }}
+                  </div>
+                  <small class="text-muted">Máximo 150 caracteres</small>
+                </div>
+
+                <!-- Registro Médico -->
+                <div class="col-md-6 mb-3">
+                  <label for="registro_medico" class="form-label">Número de Registro Médico</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="registro_medico"
+                    formControlName="registro_medico"
+                    placeholder="Ej: 12345678"
+                    [class.is-invalid]="esCampoInvalido('registro_medico')">
+                  <div class="invalid-feedback" *ngIf="esCampoInvalido('registro_medico')">
+                    {{ obtenerMensajeError('registro_medico') }}
+                  </div>
+                </div>
+
+                <!-- Universidad -->
+                <div class="col-md-6 mb-3">
+                  <label for="universidad" class="form-label">Universidad de Egreso</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="universidad"
+                    formControlName="universidad"
+                    placeholder="Ej: Universidad de Chile"
+                    [class.is-invalid]="esCampoInvalido('universidad')">
+                  <div class="invalid-feedback" *ngIf="esCampoInvalido('universidad')">
+                    {{ obtenerMensajeError('universidad') }}
+                  </div>
+                </div>
+
+                <!-- Año de Titulación -->
+                <div class="col-md-6 mb-3">
+                  <label for="anio_titulacion" class="form-label">Año de Titulación</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="anio_titulacion"
+                    formControlName="anio_titulacion"
+                    placeholder="Ej: 2005"
+                    min="1950"
+                    [max]="2025"
+                    [class.is-invalid]="esCampoInvalido('anio_titulacion')">
+                  <div class="invalid-feedback" *ngIf="esCampoInvalido('anio_titulacion')">
+                    {{ obtenerMensajeError('anio_titulacion') }}
+                  </div>
+                </div>
+
+                <!-- Años de Experiencia -->
+                <div class="col-md-6 mb-3">
+                  <label for="anios_experiencia" class="form-label">Años de Experiencia</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="anios_experiencia"
+                    formControlName="anios_experiencia"
+                    placeholder="Ej: 15"
+                    min="0"
+                    max="60"
+                    [class.is-invalid]="esCampoInvalido('anios_experiencia')">
+                  <div class="invalid-feedback" *ngIf="esCampoInvalido('anios_experiencia')">
+                    {{ obtenerMensajeError('anios_experiencia') }}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Idiomas -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+              <h5 class="mb-0">
+                <i class="fa fa-globe me-2"></i>
+                Idiomas
+              </h5>
+            </div>
+            <div class="card-body">
+
+              <div formArrayName="idiomas">
+                <div *ngFor="let idioma of idiomas.controls; let i = index" class="mb-3">
+                  <div class="input-group">
+                    <span class="input-group-text">{{ i + 1 }}</span>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [formControlName]="i"
+                      placeholder="Ej: Español, Inglés, Portugués"
+                      maxlength="50">
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      (click)="eliminarIdioma(i)"
+                      title="Eliminar idioma">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </div>
+                  <div class="invalid-feedback d-block" *ngIf="idiomas.controls[i].invalid && idiomas.controls[i].touched">
+                    El idioma es obligatorio (máx. 50 caracteres)
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-info"
+                (click)="agregarIdiomaVacio()">
+                <i class="fa fa-plus me-2"></i>
+                Agregar Idioma
+              </button>
+
+              <p class="text-muted small mb-0 mt-2">
+                <i class="fa fa-info-circle me-1"></i>
+                Agregue los idiomas que domina
+              </p>
+
+            </div>
+          </div>
+
+          <!-- Certificaciones -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+              <h5 class="mb-0">
+                <i class="fa fa-certificate me-2"></i>
+                Certificaciones
+              </h5>
+            </div>
+            <div class="card-body">
+
+              <div formArrayName="certificaciones">
+                <div *ngFor="let cert of certificaciones.controls; let i = index" class="mb-3">
+                  <div class="input-group">
+                    <span class="input-group-text">{{ i + 1 }}</span>
+                    <input
+                      type="text"
+                      class="form-control"
+                      [formControlName]="i"
+                      placeholder="Ej: Certificado en Ecocardiografía (2010)"
+                      maxlength="200">
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      (click)="eliminarCertificacion(i)"
+                      title="Eliminar certificación">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </div>
+                  <div class="invalid-feedback d-block" *ngIf="certificaciones.controls[i].invalid && certificaciones.controls[i].touched">
+                    La certificación es obligatoria (máx. 200 caracteres)
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-success"
+                (click)="agregarCertificacionVacia()">
+                <i class="fa fa-plus me-2"></i>
+                Agregar Certificación
+              </button>
+
+              <p class="text-muted small mb-0 mt-2">
+                <i class="fa fa-info-circle me-1"></i>
+                Incluya certificaciones adicionales, diplomados, fellows, etc.
+              </p>
+
+            </div>
+          </div>
+
+          <!-- Biografía -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+              <h5 class="mb-0">
+                <i class="fa fa-file-text me-2"></i>
+                Biografía / Sobre el Médico
+              </h5>
+            </div>
+            <div class="card-body">
+
+              <div class="mb-3">
+                <label for="biografia" class="form-label">Descripción Profesional</label>
+                <textarea
+                  class="form-control"
+                  id="biografia"
+                  formControlName="biografia"
+                  rows="6"
+                  placeholder="Escriba una breve descripción sobre su experiencia, áreas de interés, logros profesionales, etc."
+                  maxlength="1000"
+                  [class.is-invalid]="esCampoInvalido('biografia')"></textarea>
+                <div class="invalid-feedback" *ngIf="esCampoInvalido('biografia')">
+                  {{ obtenerMensajeError('biografia') }}
+                </div>
+                <small class="text-muted">
+                  {{ perfilForm.get('biografia')?.value?.length || 0 }} / 1000 caracteres
+                </small>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Columna Derecha -->
+        <div class="col-md-4">
+
+          <!-- Documentos PDF -->
+          <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning text-dark">
+              <h5 class="mb-0">
+                <i class="fa fa-file-pdf-o me-2"></i>
+                Documentos (PDFs)
+              </h5>
+            </div>
+            <div class="card-body">
+
+              <!-- Formulario de Subida -->
+              <div class="mb-3">
+                <label for="documentoInput" class="form-label">Subir Documento</label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="documentoInput"
+                  accept=".pdf"
+                  (change)="onFileSelected($event)">
+                <small class="text-muted">Solo PDF - Máximo 10MB</small>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-warning w-100 mb-3"
+                (click)="subirDocumento()"
+                [disabled]="!archivoSeleccionado">
+                <i class="fa fa-upload me-2"></i>
+                Subir Documento
+              </button>
+
+              <hr>
+
+              <!-- Lista de Documentos -->
+              <h6 class="mb-3">Documentos Actuales:</h6>
+
+              <div *ngIf="documentos.length === 0" class="text-center text-muted py-3">
+                <i class="fa fa-inbox fa-3x mb-2"></i>
+                <p class="mb-0">No hay documentos subidos</p>
+              </div>
+
+              <ul class="list-group" *ngIf="documentos.length > 0">
+                <li class="list-group-item d-flex justify-content-between align-items-start"
+                    *ngFor="let doc of documentos">
+                  <div class="flex-grow-1">
+                    <i class="fa fa-file-pdf-o text-danger me-2"></i>
+                    <a [href]="doc.url" target="_blank" rel="noopener noreferrer">
+                      {{ doc.nombre }}
+                    </a>
+                    <br>
+                    <small class="text-muted" *ngIf="doc.uploadedAt">
+                      {{ doc.uploadedAt | date:'dd/MM/yyyy HH:mm' }}
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-outline-danger"
+                    (click)="eliminarDocumento(doc)"
+                    title="Eliminar documento">
+                    <i class="fa fa-trash"></i>
+                  </button>
+                </li>
+              </ul>
+
+            </div>
+          </div>
+
+          <!-- Información -->
+          <div class="card shadow-sm mb-4 bg-light">
+            <div class="card-body">
+              <h6 class="card-title">
+                <i class="fa fa-info-circle text-info me-2"></i>
+                Información
+              </h6>
+              <ul class="small mb-0">
+                <li>Complete todos los campos que pueda</li>
+                <li>La biografía se mostrará en su perfil público</li>
+                <li>Los documentos deben ser en formato PDF</li>
+                <li>Los pacientes verán esta información antes de agendar</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Botones de Acción -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="d-flex justify-content-between">
+            <button type="button" class="btn btn-outline-secondary" (click)="volver()">
+              <i class="fa fa-times me-2"></i>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="btn btn-primary btn-lg"
+              [disabled]="guardando">
+              <span *ngIf="!guardando">
+                <i class="fa fa-save me-2"></i>
+                Guardar Cambios
+              </span>
+              <span *ngIf="guardando">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Guardando...
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </form>
+
+  </div>
+
+</div>

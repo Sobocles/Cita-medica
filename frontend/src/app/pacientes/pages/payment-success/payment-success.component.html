@@ -20,8 +20,47 @@
     <div *ngIf="detallesCita.factura">
       <h3>Detalles de Facturación</h3>
       <p><strong>Método de Pago:</strong> {{ detallesCita.factura.payment_method_id }}</p>
-      <p><strong>Monto Pagado:</strong> {{ detallesCita.factura.monto_pagado }}</p>
+
+      <!-- Mostrar precios con descuento si aplica -->
+      <div *ngIf="detallesCita.descuento_aplicado && detallesCita.descuento_aplicado > 0" class="alert alert-success">
+        <h4>💰 Descuento Aplicado</h4>
+        <p><strong>Precio Normal:</strong> <span style="text-decoration: line-through;">${{ detallesCita.precio_original | number:'1.0-0' }}</span></p>
+        <p><strong>Descuento {{ detallesCita.tipo_prevision_aplicada }} ({{ detallesCita.porcentaje_descuento }}%):</strong> -${{ detallesCita.descuento_aplicado | number:'1.0-0' }}</p>
+        <p><strong>Total Pagado:</strong> <span class="text-success" style="font-size: 1.3em;">${{ detallesCita.precio_final | number:'1.0-0' }}</span></p>
+      </div>
+
+      <!-- Mostrar precio normal si no hay descuento -->
+      <p *ngIf="!detallesCita.descuento_aplicado || detallesCita.descuento_aplicado === 0"><strong>Monto Pagado:</strong> ${{ detallesCita.factura.monto_pagado | number:'1.0-0' }}</p>
+
       <p><strong>Estado del Pago:</strong> {{ detallesCita.factura.estado_pago }}</p>
+    </div>
+
+    <!-- ADVERTENCIA DE DOCUMENTOS SI REQUIERE VALIDACIÓN -->
+    <div *ngIf="detallesCita.requiere_validacion_prevision && !detallesCita.prevision_validada" class="alert alert-warning" style="border-left: 4px solid #ffc107; margin-top: 20px;">
+      <h3 style="color: #856404; margin-top: 0;">⚠️ MUY IMPORTANTE - LEA CON ATENCIÓN</h3>
+      <p style="font-weight: bold; font-size: 1.1em;">Ha seleccionado pago con {{ detallesCita.tipo_prevision_aplicada?.toUpperCase() }}.</p>
+
+      <p><strong>DEBE TRAER A LA CITA:</strong></p>
+      <ul>
+        <li *ngIf="detallesCita.tipo_prevision_aplicada === 'Fonasa'">✓ Carnet Fonasa vigente</li>
+        <li *ngIf="detallesCita.tipo_prevision_aplicada === 'Isapre'">✓ Credencial de Isapre vigente</li>
+        <li>✓ Cédula de identidad</li>
+      </ul>
+
+      <div class="alert alert-danger" style="margin-top: 10px;">
+        <p style="font-weight: bold;">
+          Si no presenta estos documentos, deberá pagar la diferencia de
+          <span style="font-size: 1.2em;">${{ detallesCita.descuento_aplicado | number:'1.0-0' }}</span>
+          en efectivo en la clínica.
+        </p>
+      </div>
+    </div>
+
+    <!-- CONFIRMACIÓN DE VALIDACIÓN SI YA VALIDÓ -->
+    <div *ngIf="detallesCita.prevision_validada" class="alert alert-success" style="margin-top: 20px;">
+      <h3>✅ Previsión Validada</h3>
+      <p>Su previsión ha sido validada correctamente.</p>
+      <p *ngIf="detallesCita.observaciones_validacion"><strong>Observaciones:</strong> {{ detallesCita.observaciones_validacion }}</p>
     </div>
     <div *ngIf="AuthService.infoClinica" class="info-clinica">
       <h3>Información de Contacto de la Clínica</h3>

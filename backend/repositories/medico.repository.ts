@@ -1,12 +1,15 @@
 import Medico from '../models/medico';
 import Rol from '../models/rol';
-import CitaMedica from '../models/cita_medica';
-import HorarioMedic from '../models/horario_medico';
-import { Op } from 'sequelize';
-import TipoCita from '../models/tipo_cita';
+import { Op, FindOptions, WhereOptions } from 'sequelize';
 
+/**
+ * Repositorio para manejar el acceso a datos de médicos
+ * RESPONSABILIDAD: Solo operaciones de base de datos, sin lógica de negocio
+ */
 class MedicoRepository {
-    // Obtener médicos paginados
+    /**
+     * Obtener médicos activos paginados con su rol
+     */
     async findActiveMedicos(desde: number, limit: number = 5) {
         return Medico.findAll({
             where: { estado: 'activo' },
@@ -20,12 +23,16 @@ class MedicoRepository {
         });
     }
 
-    // Contar médicos activos
-    async countActiveMedicos() {
+    /**
+     * Contar médicos activos
+     */
+    async countActiveMedicos(): Promise<number> {
         return Medico.count({ where: { estado: 'activo' } });
     }
 
-    // Obtener todos los médicos activos (sin paginación)
+    /**
+     * Obtener todos los médicos activos (sin paginación)
+     */
     async findAllActiveMedicos() {
         return Medico.findAll({
             where: { estado: 'activo' },
@@ -37,51 +44,52 @@ class MedicoRepository {
         });
     }
 
-    // Obtener médicos por especialidad (con especialidades válidas)
-    async findMedicosByValidEspecialidades() {
-        // Obtener especialidades válidas
-        const especialidadesValidas = await TipoCita.findAll({
-            attributes: ['especialidad_medica']
-        });
-        const especialidades = especialidadesValidas.map(ec => ec.especialidad_medica);
-
-        // Obtener médicos activos
-        const medicos = await Medico.findAll({
+    /**
+     * Obtener médicos activos con especialidades específicas
+     * Filtra por especialidades proporcionadas
+     */
+    async findActiveMedicosByEspecialidades(especialidades: string[]) {
+        return Medico.findAll({
             attributes: ['rut', 'nombre', 'apellidos', 'especialidad_medica'],
             include: [{
                 model: Rol,
                 as: 'rol',
                 attributes: ['codigo']
             }],
-            where: { estado: 'activo' }
+            where: {
+                estado: 'activo',
+                especialidad_medica: { [Op.in]: especialidades }
+            }
         });
-
-        // Procesar para compatibilidad y filtrar
-        return medicos
-            .map(medico => {
-                const medicoJSON = medico.toJSON();
-                if (medicoJSON.rol && medicoJSON.rol.codigo) {
-                    medicoJSON.rol = medicoJSON.rol.codigo;
-                }
-                return medicoJSON;
-            })
-            .filter(medico => especialidades.includes(medico.especialidad_medica));
     }
 
-    // Buscar médico por ID
-    async findById(rut: string) {
-        return Medico.findByPk(rut, {
+    /**
+     * Buscar médico por RUT con su rol
+     */
+    async findById(rut: string, includeRole: boolean = true) {
+        const options: FindOptions = includeRole ? {
             include: [{
                 model: Rol,
                 as: 'rol',
                 attributes: ['id', 'nombre', 'codigo']
             }]
-        });
+        } : {};
+
+        return Medico.findByPk(rut, options);
     }
 
-    // Buscar por email
+    /**
+     * Buscar médico por RUT sin relaciones
+     */
+    async findByRut(rut: string) {
+        return Medico.findByPk(rut);
+    }
+
+    /**
+     * Buscar médico por email
+     */
     async findByEmail(email: string) {
-        return Medico.findOne({ 
+        return Medico.findOne({
             where: { email },
             include: [{
                 model: Rol,
@@ -91,63 +99,72 @@ class MedicoRepository {
         });
     }
 
-    // Buscar por teléfono
+    /**
+     * Buscar médico por teléfono
+     */
     async findByPhone(telefono: string) {
         return Medico.findOne({ where: { telefono } });
     }
 
-    // Crear médico
-    async createMedico(medicoData: any) {
-        return Medico.create(medicoData);
+    /**
+     * Crear un nuevo médico
+     */
+    async create(medicoData: Partial<Medico>) {
+        return Medico.create(medicoData as any);
     }
 
-    // Actualizar médico
-    async updateMedico(rut: string, data: any) {
+    /**
+     * Actualizar un médico
+     */
+    async update(medico: Medico, data: Partial<Medico>) {
+        return medico.update(data);
+    }
+
+    /**
+     * Actualizar médico por RUT
+     */
+    async updateByRut(rut: string, data: Partial<Medico>) {
         const medico = await Medico.findByPk(rut);
         if (!medico) return null;
         return medico.update(data);
     }
 
-    // Eliminar médico (marcar como inactivo y actualizar entidades relacionadas)
-    async deleteMedico(rut: string) {
+    /**
+     * Marcar médico como inactivo (soft delete)
+     */
+    async softDelete(rut: string) {
         const medico = await Medico.findByPk(rut);
         if (!medico) return null;
-        
-        // Actualizar citas médicas en estados específicos
-        await CitaMedica.update(
-            { estado_actividad: 'inactivo' },
-            { 
-                where: { 
-                    rut_medico: rut,
-                    estado: { [Op.in]: ['terminado', 'no_pagado', 'no_asistio'] }
-                }
-            }
-        );
-        
-        // Eliminar horarios del médico
-        await HorarioMedic.destroy({ where: { rut_medico: rut } });
-        
-        // Marcar médico como inactivo
         return medico.update({ estado: 'inactivo' });
     }
 
-    // Cambiar contraseña
-    async changePassword(rut: string, newPassword: string) {
-        const medico = await Medico.findByPk(rut);
-        if (!medico) return null;
-        return medico.update({ password: newPassword });
+    /**
+     * Buscar médico con opciones personalizadas
+     */
+    async findOne(options: FindOptions) {
+        return Medico.findOne(options);
     }
 
-     async updateWhere(where: any, data: any) {
-    return Medico.update(data, { where });
-  }
-}
+    /**
+     * Buscar todos los médicos con opciones personalizadas
+     */
+    async findAll(options: FindOptions) {
+        return Medico.findAll(options);
+    }
 
-// Ejemplo para CitaRepository
-export class CitaRepository {
-  // ... otros métodos
-  
+    /**
+     * Contar médicos con opciones específicas
+     */
+    async count(options: { where?: WhereOptions }): Promise<number> {
+        return Medico.count(options);
+    }
 
+    /**
+     * Actualizar médicos que cumplen con las condiciones especificadas
+     */
+    async updateWhere(where: WhereOptions, data: Partial<Medico>) {
+        return Medico.update(data, { where });
+    }
 }
 
 export default new MedicoRepository();

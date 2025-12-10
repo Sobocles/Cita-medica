@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { rutValidator } from 'src/app/shared/Validators/rut-validator';
 import { phoneValidator } from 'src/app/shared/Validators/phone-validator';
 import { passwordStrengthValidator } from 'src/app/shared/Validators/password-strength-validator';
+import { ErrorHandlerService } from 'src/app/shared/services/error-handler.service';
 
 @Component({
   selector: 'app-register',
@@ -14,8 +15,28 @@ import { passwordStrengthValidator } from 'src/app/shared/Validators/password-st
 })
 export class RegisterComponent implements OnInit {
   miFormulario: FormGroup;
-  
-  constructor(private fb: FormBuilder, private AuthService: AuthService, private router: Router) {
+
+  // Listas de Isapres en Chile
+  isapres = [
+    'Banmédica',
+    'Colmena',
+    'Consalud',
+    'CruzBlanca',
+    'Nueva Masvida',
+    'Vida Tres',
+    'Fundación Banco Estado',
+    'Otra'
+  ];
+
+  // Tramos de Fonasa
+  tramosFonasa = ['A', 'B', 'C', 'D'];
+
+  constructor(
+    private fb: FormBuilder,
+    private AuthService: AuthService,
+    private router: Router,
+    private errorHandler: ErrorHandlerService
+  ) {
     this.miFormulario = this.fb.group({
       rut: ['', [Validators.required, rutValidator()]],
       nombre: ['', Validators.required],
@@ -24,8 +45,43 @@ export class RegisterComponent implements OnInit {
       password: ['', [Validators.required, Validators.minLength(6), passwordStrengthValidator()]],
       fecha_nacimiento: ['', [Validators.required]],
       telefono: ['', [Validators.required, phoneValidator()]],
-      direccion: ['', Validators.required]
+      direccion: ['', Validators.required],
+
+      // Campos de previsión
+      tipo_prevision: ['Particular', Validators.required],
+      nombre_isapre: [''],
+      tramo_fonasa: ['']
     });
+  }
+
+  /**
+   * Retorna true si el tipo de previsión es Isapre
+   */
+  get esIsapre(): boolean {
+    return this.miFormulario.get('tipo_prevision')?.value === 'Isapre';
+  }
+
+  /**
+   * Retorna true si el tipo de previsión es Fonasa
+   */
+  get esFonasa(): boolean {
+    return this.miFormulario.get('tipo_prevision')?.value === 'Fonasa';
+  }
+
+  /**
+   * Se ejecuta cuando cambia el tipo de previsión
+   * Limpia los campos que no corresponden
+   */
+  onTipoPrevisionChange(): void {
+    const tipoPrevision = this.miFormulario.get('tipo_prevision')?.value;
+
+    if (tipoPrevision !== 'Isapre') {
+      this.miFormulario.patchValue({ nombre_isapre: '' });
+    }
+
+    if (tipoPrevision !== 'Fonasa') {
+      this.miFormulario.patchValue({ tramo_fonasa: '' });
+    }
   }
   
   ngOnInit(): void {
@@ -71,21 +127,19 @@ export class RegisterComponent implements OnInit {
   registrar() {
     if (this.miFormulario.invalid) {
       this.miFormulario.markAllAsTouched();
-      
-      // Mostrar mensaje de formulario incompleto
-      Swal.fire({
-        icon: 'warning',
-        title: 'Formulario incompleto',
-        text: 'Por favor, complete todos los campos requeridos correctamente.',
-        confirmButtonText: 'Entendido'
-      });
+
+      // Usar ErrorHandlerService para mostrar advertencia
+      this.errorHandler.showWarning(
+        'Por favor, complete todos los campos requeridos correctamente.',
+        'Formulario incompleto'
+      );
       return;
     }
  
     const formData = this.miFormulario.value;
  
-    this.AuthService.crearUsuario(formData).subscribe(
-      (respuesta) => {
+    this.AuthService.crearUsuario(formData).subscribe({
+      next: (respuesta) => {
         Swal.fire({
           icon: 'success',
           title: '¡Registro completado!',
@@ -97,15 +151,10 @@ export class RegisterComponent implements OnInit {
           }
         });
       },
-      (err) => {
-        if (err.error.msg === 'El correo ya está registrado') {
-          Swal.fire('Error', 'El correo electrónico ya está en uso. Por favor, intenta con otro.', 'error');
-        } else if (err.error.msg === 'El teléfono ya está registrado') {
-          Swal.fire('Error', 'El número de teléfono ya está en uso. Por favor, intenta con otro.', 'error');
-        } else {
-          Swal.fire('Error', 'Ha ocurrido un error durante el registro. Por favor, inténtalo de nuevo.', 'error');
-        }
+      error: (err) => {
+        // Usar ErrorHandlerService para manejo centralizado de errores de autenticación
+        this.errorHandler.handleAuthError(err);
       }
-    );
+    });
   }
 }

@@ -15,10 +15,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const usuario_1 = __importDefault(require("../models/usuario"));
 const rol_1 = __importDefault(require("../models/rol"));
 const cita_medica_1 = __importDefault(require("../models/cita_medica"));
-const historial_medico_1 = __importDefault(require("../models/historial_medico"));
 const sequelize_1 = require("sequelize");
+/**
+ * Repositorio para manejar el acceso a datos de usuarios
+ * RESPONSABILIDAD: Solo operaciones de base de datos, sin lógica de negocio
+ */
 class UsuarioRepository {
-    // Obtener usuarios paginados
+    /**
+     * Obtener usuarios activos paginados con su rol
+     */
     findActiveUsers(desde, limit = 5) {
         return __awaiter(this, void 0, void 0, function* () {
             return usuario_1.default.findAll({
@@ -34,13 +39,17 @@ class UsuarioRepository {
             });
         });
     }
-    // Contar usuarios activos
+    /**
+     * Contar usuarios activos
+     */
     countActiveUsers() {
         return __awaiter(this, void 0, void 0, function* () {
             return usuario_1.default.count({ where: { estado: 'activo' } });
         });
     }
-    // Obtener todos los pacientes (no administradores)
+    /**
+     * Obtener todos los pacientes (no administradores) con sus citas
+     */
     findAllPatients() {
         return __awaiter(this, void 0, void 0, function* () {
             return usuario_1.default.findAll({
@@ -59,26 +68,49 @@ class UsuarioRepository {
             });
         });
     }
-    // Crear usuario
-    createUser(userData) {
+    /**
+     * Crear un nuevo usuario
+     */
+    create(userData) {
         return __awaiter(this, void 0, void 0, function* () {
             return usuario_1.default.create(userData);
         });
     }
-    // Buscar usuario por ID
-    findById(id) {
+    /**
+     * Buscar usuario por ID (RUT) con su rol
+     */
+    findById(id, includeRole = true) {
         return __awaiter(this, void 0, void 0, function* () {
-            return usuario_1.default.findByPk(id, {
+            const options = includeRole ? {
                 include: [{
                         model: rol_1.default,
                         as: 'rol',
                         attributes: ['id', 'nombre', 'codigo']
                     }]
-            });
+            } : {};
+            return usuario_1.default.findByPk(id, options);
         });
     }
-    // Actualizar usuario
-    updateUser(id, data) {
+    /**
+     * Buscar usuario por RUT sin relaciones
+     */
+    findByRut(rut) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return usuario_1.default.findByPk(rut);
+        });
+    }
+    /**
+     * Actualizar un usuario
+     */
+    update(usuario, data) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return usuario.update(data);
+        });
+    }
+    /**
+     * Actualizar usuario por ID
+     */
+    updateById(id, data) {
         return __awaiter(this, void 0, void 0, function* () {
             const usuario = yield usuario_1.default.findByPk(id);
             if (!usuario)
@@ -86,59 +118,66 @@ class UsuarioRepository {
             return usuario.update(data);
         });
     }
-    // Eliminar usuario (marcar como inactivo)
-    deleteUser(id) {
+    /**
+     * Marcar usuario como inactivo (soft delete)
+     */
+    softDelete(id) {
         return __awaiter(this, void 0, void 0, function* () {
             const usuario = yield usuario_1.default.findByPk(id);
             if (!usuario)
                 return null;
-            // Actualizar entidades relacionadas
-            yield cita_medica_1.default.update({ estado_actividad: 'inactivo' }, { where: { rut_paciente: usuario.rut } });
-            yield historial_medico_1.default.update({ estado_actividad: 'inactivo' }, { where: { rut_paciente: usuario.rut } });
             return usuario.update({ estado: 'inactivo' });
         });
     }
-    // Buscar por email
+    /**
+     * Buscar usuario por email
+     */
     findByEmail(email) {
         return __awaiter(this, void 0, void 0, function* () {
             return usuario_1.default.findOne({ where: { email } });
         });
     }
-    // Buscar por teléfono
+    /**
+     * Buscar usuario por teléfono
+     */
     findByPhone(telefono) {
         return __awaiter(this, void 0, void 0, function* () {
             return usuario_1.default.findOne({ where: { telefono } });
         });
     }
-    // Cambiar contraseña
-    changePassword(rut, newPassword) {
+    /**
+     * Buscar usuario por RUT (sin relaciones)
+     */
+    findOne(options) {
         return __awaiter(this, void 0, void 0, function* () {
-            const usuario = yield usuario_1.default.findByPk(rut);
-            if (!usuario)
-                return null;
-            return usuario.update({ password: newPassword });
+            return usuario_1.default.findOne(options);
         });
     }
-    getPatientsWithAppointments(rut_medico, estados) {
+    /**
+     * Buscar todos los usuarios con opciones personalizadas
+     */
+    findAll(options) {
         return __awaiter(this, void 0, void 0, function* () {
-            return cita_medica_1.default.findAll({
-                where: {
-                    rut_medico,
-                    estado: estados,
-                    estado_actividad: 'activo'
-                },
-                include: [{
-                        model: usuario_1.default,
-                        as: 'paciente',
-                        include: [{
-                                model: rol_1.default,
-                                as: 'rol',
-                                where: { codigo: { [sequelize_1.Op.ne]: 'ADMIN_ROLE' } }
-                            }],
-                        where: { estado: 'activo' },
-                        attributes: { exclude: ['password', 'createdAt', 'updatedAt'] }
-                    }]
+            return usuario_1.default.findAll(options);
+        });
+    }
+    /**
+     * Contar usuarios con opciones específicas
+     */
+    count(options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return usuario_1.default.count(options);
+        });
+    }
+    /**
+     * Obtener RUT de un usuario (útil para operaciones relacionadas)
+     */
+    getUserRut(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const usuario = yield usuario_1.default.findByPk(id, {
+                attributes: ['rut']
             });
+            return usuario ? usuario.rut : null;
         });
     }
 }

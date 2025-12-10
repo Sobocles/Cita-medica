@@ -24,6 +24,8 @@ import { AgregarInfoClinicaComponent } from './pages/info-clinica/agregar-info-c
 import { VerFacturasComponent } from './pages/facturas-medicas/ver-facturas/ver-facturas.component';
 import { ImprimirFacturaComponent } from './pages/facturas-medicas/imprimir-factura/imprimir-factura.component';
 import { AgregarmedicoComponent } from './pages/gestionar-medicos/agregarmedico/agregarmedico.component';
+import { ValidarPrevisionComponent } from './pages/validar-prevision/validar-prevision.component';
+import { EditarPerfilMedicoComponent } from './pages/editar-perfil-medico/editar-perfil-medico.component';
 
 
 
@@ -56,11 +58,13 @@ import { AgregarmedicoComponent } from './pages/gestionar-medicos/agregarmedico/
     VerFacturasComponent,
     ImprimirFacturaComponent,
     AgregarmedicoComponent,
-    
+    ValidarPrevisionComponent,
+    EditarPerfilMedicoComponent,
 
-  
-   
-    
+
+
+
+
   ],
   imports: [
     CommonModule,

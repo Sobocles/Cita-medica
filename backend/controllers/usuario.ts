@@ -1,129 +1,172 @@
 import { Request, Response } from 'express';
 import usuarioService from '../services/usuario.service';
-import usuarioRepository from '../repositories/usuario.repository';
+import ResponseHelper from '../helpers/response.helper';
 
+/**
+ * Controlador para manejar las peticiones HTTP relacionadas con usuarios
+ * RESPONSABILIDAD: Solo manejar request/response, delegar lógica al servicio
+ */
+
+/**
+ * Obtiene usuarios paginados
+ */
 export const getUsuarios = async (req: Request, res: Response) => {
-    const desde = Number(req.query.desde) || 0;
     try {
+        const desde = Number(req.query.desde) || 0;
         const result = await usuarioService.getPaginatedUsers(desde);
-        res.json(result);
-    } catch (error) {
-        res.status(500).send('Error interno del servidor');
+
+        return ResponseHelper.successWithCustomData(res, result);
+    } catch (error: any) {
+        console.error('Error al obtener usuarios:', error);
+        return ResponseHelper.serverError(res, 'Error al obtener usuarios', error);
     }
 };
 
+/**
+ * Obtiene todos los pacientes (no administradores)
+ */
 export const getAllUsuarios = async (req: Request, res: Response) => {
     try {
         const pacientes = await usuarioService.getAllPatients();
-        res.json({
-            ok: true,
+
+        return ResponseHelper.successWithCustomData(res, {
             usuarios: pacientes,
             total: pacientes.length
         });
-    } catch (error) {
-        res.status(500).send('Error interno del servidor');
+    } catch (error: any) {
+        console.error('Error al obtener pacientes:', error);
+        return ResponseHelper.serverError(res, 'Error al obtener pacientes', error);
     }
 };
 
+/**
+ * Obtiene un usuario por su ID
+ */
+export const getUsuario = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        const usuario = await usuarioService.getUserById(id);
+
+        return ResponseHelper.successWithCustomData(res, { usuario });
+    } catch (error: any) {
+        console.error('Error al obtener usuario:', error);
+
+        if (error.message === 'Usuario no encontrado') {
+            return ResponseHelper.notFound(res, error.message);
+        }
+
+        return ResponseHelper.serverError(res, 'Error al obtener usuario', error);
+    }
+};
+
+/**
+ * Crea un nuevo usuario
+ */
 export const CrearUsuario = async (req: Request, res: Response) => {
-    console.log("ENTRO EN CREAR USUARIO");
     try {
         const user = await usuarioService.createUser(req.body);
-        res.json({
-            ok: true,
-            usuario: user
-        });
 
-        console.log("Usuario creado");
+        return ResponseHelper.successWithCustomData(res, { usuario: user });
     } catch (error: any) {
-        res.status(400).json({
-            ok: false,
-            msg: error.message
-        });
+        console.error('Error al crear usuario:', error);
+        return ResponseHelper.badRequest(res, error.message);
     }
 };
 
-export const getUsuario = async (req: Request, res: Response) => {
-    const { id } = req.params;
-    try {
-        const usuario = await usuarioRepository.findById(id);
-        if (!usuario) {
-            return res.status(404).json({ msg: 'Usuario no encontrado' });
-        }
-        res.json(usuario);
-    } catch (error) {
-        res.status(500).send('Error interno del servidor');
-    }
-};
-
+/**
+ * Actualiza un usuario existente
+ */
 export const putUsuario = async (req: Request, res: Response) => {
-    const { id } = req.params;
     try {
+        const { id } = req.params;
         const usuario = await usuarioService.updateUser(id, req.body);
-        if (!usuario) {
-            return res.status(404).json({ ok: false, msg: 'Usuario no encontrado' });
+
+        return ResponseHelper.successWithCustomData(res, { usuario });
+    } catch (error: any) {
+        console.error('Error al actualizar usuario:', error);
+
+        if (error.message === 'Usuario no encontrado') {
+            return ResponseHelper.notFound(res, error.message);
         }
-        res.json({ usuario });
-    } catch (error: any) {
-        res.status(400).json({ ok: false, msg: error.message });
+
+        return ResponseHelper.badRequest(res, error.message);
     }
 };
 
+/**
+ * Elimina un usuario (soft delete) y sus relaciones
+ */
 export const deleteUsuario = async (req: Request, res: Response) => {
-    const { id } = req.params;
     try {
+        const { id } = req.params;
         await usuarioService.deleteUser(id);
-        res.json({ msg: 'Usuario eliminado correctamente' });
+
+        return ResponseHelper.success(res, undefined, 'Usuario eliminado correctamente');
     } catch (error: any) {
-        res.status(400).json({ ok: false, msg: error.message });
+        console.error('Error al eliminar usuario:', error);
+
+        if (error.message === 'Usuario no encontrado') {
+            return ResponseHelper.notFound(res, error.message);
+        }
+
+        return ResponseHelper.badRequest(res, error.message);
     }
 };
 
+/**
+ * Cambia la contraseña de un usuario
+ */
 export const cambiarPassword = async (req: Request, res: Response) => {
-    const { rut, password, newPassword } = req.body;
     try {
+        const { rut, password, newPassword } = req.body;
         await usuarioService.changePassword(rut, password, newPassword);
-        res.json({ ok: true, msg: 'Contraseña actualizada correctamente' });
+
+        return ResponseHelper.success(res, undefined, 'Contraseña actualizada correctamente');
     } catch (error: any) {
-        res.status(400).json({ ok: false, msg: error.message });
+        console.error('Error al cambiar contraseña:', error);
+        return ResponseHelper.badRequest(res, error.message);
     }
 };
 
+/**
+ * Obtiene pacientes con citas en estados específicos para un médico
+ */
 export const getPacientesConCitasPagadasYEnCurso = async (req: Request, res: Response) => {
-    const { rut_medico } = req.params;
-    
     try {
+        const { rut_medico } = req.params;
         const pacientes = await usuarioService.getPatientsWithAppointments(
-            rut_medico, 
+            rut_medico,
             ['en_curso', 'pagado', 'terminado']
         );
-        
-        res.json({
-            ok: true,
+
+        return ResponseHelper.successWithCustomData(res, {
             usuarios: pacientes,
             total: pacientes.length
         });
-    } catch (error) {
-        res.status(500).send('Error interno del servidor');
+    } catch (error: any) {
+        console.error('Error al obtener pacientes con citas:', error);
+        return ResponseHelper.serverError(res, 'Error al obtener pacientes con citas', error);
     }
 };
 
+/**
+ * Obtiene pacientes con citas pagadas, en curso y terminadas
+ * (Duplicado del anterior - considera consolidar)
+ */
 export const getPacientesConCitasPagadasYEnCursoYterminado = async (req: Request, res: Response) => {
-    const { rut_medico } = req.params;
-    
     try {
+        const { rut_medico } = req.params;
         const pacientes = await usuarioService.getPatientsWithAppointments(
-            rut_medico, 
+            rut_medico,
             ['en_curso', 'pagado', 'terminado']
         );
-        
-        res.json({
-            ok: true,
+
+        return ResponseHelper.successWithCustomData(res, {
             usuarios: pacientes,
             total: pacientes.length
         });
-    } catch (error) {
-        res.status(500).send('Error interno del servidor');
+    } catch (error: any) {
+        console.error('Error al obtener pacientes con citas:', error);
+        return ResponseHelper.serverError(res, 'Error al obtener pacientes con citas', error);
     }
 };
-// Controladores para las consultas específicas de pacientes...

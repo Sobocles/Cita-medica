@@ -85,4 +85,19 @@ obtenerCitaMedicaPorIdParaPacientes(rutPaciente: string, desde: number, limite: 
     return this.http.put(url, data, this.headers);
   }
 
+  /**
+   * Valida la previsión del paciente el día de la cita
+   * @param idCita - ID de la cita a validar
+   * @param validacionData - Datos de validación (validado, diferenciaEfectivo, tipoPrevisionReal, observaciones)
+   */
+  validarPrevision(idCita: number, validacionData: {
+    validado: boolean;
+    diferenciaEfectivo?: number;
+    tipoPrevisionReal?: 'Fonasa' | 'Isapre' | 'Particular';
+    observaciones?: string;
+  }): Observable<any> {
+    const url = `${base_url}/cita_medica/validar-prevision/${idCita}`;
+    return this.http.post(url, validacionData, this.headers);
+  }
+
 }

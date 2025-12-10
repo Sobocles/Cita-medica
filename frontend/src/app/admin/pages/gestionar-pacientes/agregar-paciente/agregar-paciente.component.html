@@ -93,7 +93,50 @@
               Este campo es obligatorio.
             </div>
           </div>
-          
+
+          <!-- Sección de Previsión de Salud -->
+          <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+              <h5 class="mb-0">
+                <i class="bi bi-heart-pulse me-2"></i>
+                Previsión de Salud
+              </h5>
+            </div>
+            <div class="card-body">
+              <!-- Tipo de Previsión -->
+              <div class="form-group mb-3">
+                <label for="tipo_prevision">Tipo de Previsión</label>
+                <select
+                  class="form-select"
+                  id="tipo_prevision"
+                  formControlName="tipo_prevision"
+                  (change)="onTipoPrevisionChange()">
+                  <option value="Particular">Particular</option>
+                  <option value="Fonasa">Fonasa</option>
+                  <option value="Isapre">Isapre</option>
+                </select>
+              </div>
+
+              <!-- Nombre de Isapre (solo si seleccionó Isapre) -->
+              <div class="form-group mb-3" *ngIf="esIsapre">
+                <label for="nombre_isapre">Isapre</label>
+                <select class="form-select" id="nombre_isapre" formControlName="nombre_isapre">
+                  <option value="">Seleccione su Isapre</option>
+                  <option *ngFor="let isapre of isapres" [value]="isapre">{{ isapre }}</option>
+                </select>
+              </div>
+
+              <!-- Tramo Fonasa (solo si seleccionó Fonasa) -->
+              <div class="form-group mb-3" *ngIf="esFonasa">
+                <label for="tramo_fonasa">Tramo Fonasa</label>
+                <select class="form-select" id="tramo_fonasa" formControlName="tramo_fonasa">
+                  <option value="">Seleccione su tramo</option>
+                  <option *ngFor="let tramo of tramosFonasa" [value]="tramo">Tramo {{ tramo }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           <button type="submit" class="btn btn-primary btn-block">Registrar Paciente</button>
         </form>
       </div>

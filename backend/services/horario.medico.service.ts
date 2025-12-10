@@ -1,37 +1,34 @@
 import horarioMedicoRepository from '../repositories/HorarioMedicoRepository';
-import Medico from '../models/medico';
 
+/**
+ * Servicio para manejar la lógica de negocio de horarios médicos
+ */
 export class HorarioMedicoService {
-    // Obtener todos los horarios médicos con paginación
+    /**
+     * Obtiene todos los horarios médicos con información del médico y paginación
+     */
     async getHorariosMedicos(desde: number, limite: number) {
-        const include = [{
-            model: Medico,
-            as: 'medico',
-            attributes: ['nombre', 'apellidos', 'especialidad_medica'],
-            where: { estado: 'activo' }
-        }];
-
-        return horarioMedicoRepository.findAll({
-            include,
-            offset: desde,
-            limit: limite
-        });
+        return horarioMedicoRepository.findAllWithMedico(desde, limite);
     }
 
-    // Obtener un horario médico por su ID
+    /**
+     * Obtiene un horario médico por su ID
+     */
     async getHorarioMedico(idHorario: number) {
         return horarioMedicoRepository.findByPk(idHorario);
     }
 
-    // Crear un nuevo horario médico con validación de solapamiento
+    /**
+     * Crea un nuevo horario médico con validación de solapamiento
+     */
     async crearHorarioMedico(horarioData: any) {
         const { rut_medico, diaSemana, horaInicio, horaFinalizacion } = horarioData;
 
         // Verificar solapamiento
         const horariosExistentes = await horarioMedicoRepository.findOverlappingSchedules(
-            rut_medico, 
-            diaSemana, 
-            horaInicio, 
+            rut_medico,
+            diaSemana,
+            horaInicio,
             horaFinalizacion
         );
 
@@ -42,7 +39,9 @@ export class HorarioMedicoService {
         return horarioMedicoRepository.create(horarioData);
     }
 
-    // Actualizar un horario médico existente
+    /**
+     * Actualiza un horario médico existente con validación de solapamiento
+     */
     async actualizarHorarioMedico(idHorario: number, horarioData: any) {
         const horario = await horarioMedicoRepository.findByPk(idHorario);
         if (!horario) throw new Error('Horario no encontrado');
@@ -51,9 +50,9 @@ export class HorarioMedicoService {
 
         // Verificar solapamiento excluyendo el horario actual
         const horariosExistentes = await horarioMedicoRepository.findOverlappingSchedules(
-            rut_medico, 
-            diaSemana, 
-            horaInicio, 
+            rut_medico,
+            diaSemana,
+            horaInicio,
             horaFinalizacion,
             idHorario
         );
@@ -65,11 +64,13 @@ export class HorarioMedicoService {
         return horarioMedicoRepository.update(horario, horarioData);
     }
 
-    // Eliminar un horario médico
+    /**
+     * Elimina un horario médico
+     */
     async eliminarHorarioMedico(idHorario: number) {
         const horario = await horarioMedicoRepository.findByPk(idHorario);
         if (!horario) throw new Error('Horario no encontrado');
-        
+
         return horarioMedicoRepository.destroy(horario);
     }
 }

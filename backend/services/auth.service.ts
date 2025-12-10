@@ -1,7 +1,4 @@
 // services/auth.service.ts
-import Usuario from '../models/usuario';
-import Medico from '../models/medico';
-import InfoClinica from '../models/info-clinica';
 import bcrypt from 'bcrypt';
 import JwtGenerate from '../helpers/jwt';
 import Email from '../helpers/emails';
@@ -9,6 +6,10 @@ import RolService from './rol.service';
 import { getMenuFrontEnd } from '../helpers/menu-frontend';
 import * as generatePassword from 'generate-password';
 import { UserRole } from '../types/enums';
+import usuarioRepository from '../repositories/usuario.repository';
+import medicoRepository from '../repositories/medico.repository';
+import rolRepository from '../repositories/rol.repository';
+import infoClinicaRepository from '../repositories/InfoClinicaRepository';
 import Rol from '../models/rol';
 
 /**
@@ -33,12 +34,12 @@ export default class AuthService {
    * @returns true si el email existe, false si no
    */
   public async verificarEmailExistente(email: string): Promise<boolean> {
-    const usuarioExistente = await Usuario.findOne({ where: { email } });
+    const usuarioExistente = await usuarioRepository.findOne({ where: { email } });
     if (usuarioExistente) return true;
-    
-    const medicoExistente = await Medico.findOne({ where: { email } });
+
+    const medicoExistente = await medicoRepository.findOne({ where: { email } });
     if (medicoExistente) return true;
-    
+
     return false;
   }
 
@@ -48,12 +49,12 @@ export default class AuthService {
    * @returns true si el teléfono existe, false si no
    */
   public async verificarTelefonoExistente(telefono: string): Promise<boolean> {
-    const usuarioExistente = await Usuario.findOne({ where: { telefono } });
+    const usuarioExistente = await usuarioRepository.findOne({ where: { telefono } });
     if (usuarioExistente) return true;
-    
-    const medicoExistente = await Medico.findOne({ where: { telefono } });
+
+    const medicoExistente = await medicoRepository.findOne({ where: { telefono } });
     if (medicoExistente) return true;
-    
+
     return false;
   }
 
@@ -65,41 +66,41 @@ export default class AuthService {
  public async registrarUsuario(userData: any) {
   console.log("🔍 INICIANDO REGISTRO DE USUARIO");
   console.log("🔍 userData recibido:", userData);
-  
+
   // ✅ BUSCAR Y ASIGNAR ROL DE USUARIO POR CÓDIGO (OPCIÓN ROBUSTA)
   console.log("🔍 Buscando rol USER_ROLE en la base de datos...");
-  
-  const rolUsuario = await Rol.findOne({ where: { codigo: 'USER_ROLE' } });
+
+  const rolUsuario = await rolRepository.findByCode('USER_ROLE');
   console.log("🔍 Resultado de búsqueda de rol:", rolUsuario);
-  
+
   if (!rolUsuario) {
     console.error("❌ Error: Rol USER_ROLE no encontrado");
     throw new Error('Rol de usuario no encontrado en el sistema');
   }
-  
+
   console.log("✅ Rol encontrado:", { id: rolUsuario.id, codigo: rolUsuario.codigo });
-  
+
   // Asignar el rolId encontrado
   userData.rolId = rolUsuario.id;
   console.log("✅ rolId asignado a userData:", userData.rolId);
-  
+
   // Encriptar la contraseña
   const salt = bcrypt.genSaltSync();
   userData.password = bcrypt.hashSync(userData.password, salt);
-  
+
   console.log("---------------AQUI EL USUARIO CON ROLID------------", userData);
   console.log("password encriptado", userData.password);
   console.log("rolId FINAL asignado:", userData.rolId);
-  
+
   // Crear usuario en la base de datos
   console.log("🔍 Creando usuario en la base de datos...");
-  const nuevoUsuario = await Usuario.create(userData);
+  const nuevoUsuario = await usuarioRepository.create(userData);
   console.log("✅ Usuario creado con rolId:", nuevoUsuario.rolId);
-  
+
   // Obtener el rol del usuario (ya sabemos que existe)
   const rolCodigo = rolUsuario.codigo;
   console.log("✅ Código de rol para JWT:", rolCodigo);
-  
+
   // Generar JWT usando el código del rol
   const token = await JwtGenerate.instance.generarJWT(
     nuevoUsuario.rut,
@@ -107,24 +108,24 @@ export default class AuthService {
     nuevoUsuario.apellidos,
     rolCodigo // Usamos el código del rol
   );
-  
+
   console.log("✅ JWT generado con rol:", rolCodigo);
-  
+
   // Obtener menú según el rol
   const menu = getMenuFrontEnd(rolCodigo);
-  
+
   // Obtener información de la clínica
-  const infoClinica = await InfoClinica.findOne();
-  
+  const infoClinica = await infoClinicaRepository.findOne();
+
   // Datos para devolver (excluir contraseña)
   const usuarioJSON = nuevoUsuario.toJSON();
-  
+
   // Agregar el rol como propiedad separada para compatibilidad
   usuarioJSON.rol = rolCodigo;
   console.log("✅ Usuario JSON final con rol:", usuarioJSON.rol);
-  
+
   const { password, ...usuarioSinPassword } = usuarioJSON;
-  
+
   return {
     userOrMedico: usuarioSinPassword,
     token,
@@ -143,56 +144,56 @@ export default class AuthService {
     // Buscar primero en usuarios
     let entidadAutenticada: any = null;
     let rolCodigo = '';
-    
+
     // Intentar autenticar como usuario regular
-    const usuario = await Usuario.findOne({ 
+    const usuario = await usuarioRepository.findOne({
       where: { email },
       include: [{
         model: Rol,
         as: 'rol'
       }]
     });
-    
+
     if (usuario) {
       // Verificar si está activo
       if (usuario.estado === 'inactivo') {
         throw new Error('El usuario está inactivo');
       }
-      
+
       // Verificar contraseña
       const validPassword = bcrypt.compareSync(password, usuario.password);
       if (!validPassword) {
         throw new Error('Contraseña no válida');
       }
-      
+
       entidadAutenticada = usuario;
-      
+
       // Convertir el modelo de Sequelize a un objeto plano de JavaScript
       const usuarioJSON = usuario.toJSON();
-      
+
       // Extraer el código del rol de forma segura
       rolCodigo = usuarioJSON.rol?.codigo || UserRole.USER;
-      
+
       // Agregar el rol como propiedad directa para compatibilidad con el frontend
       usuarioJSON.rol = rolCodigo;
-      
+
       entidadAutenticada = usuarioJSON;
     } else {
       // Si no es usuario, intentar como médico
-      const medico = await Medico.findOne({ where: { email } });
-      
+      const medico = await medicoRepository.findOne({ where: { email } });
+
       if (medico) {
         // Verificar si está activo
         if (medico.estado === 'inactivo') {
           throw new Error('El médico está inactivo');
         }
-        
+
         // Verificar contraseña
         const validPassword = bcrypt.compareSync(password, medico.password);
         if (!validPassword) {
           throw new Error('Contraseña no válida');
         }
-        
+
         entidadAutenticada = medico.toJSON();
         rolCodigo = medico.rol || UserRole.MEDICO;
       } else {
@@ -200,7 +201,7 @@ export default class AuthService {
         throw new Error('Usuario o médico no encontrado');
       }
     }
-    
+
     // Generar JWT
     const token = await JwtGenerate.instance.generarJWT(
       entidadAutenticada.rut,
@@ -208,16 +209,16 @@ export default class AuthService {
       entidadAutenticada.apellidos,
       rolCodigo
     );
-    
+
     // Obtener menú según el rol
     const menu = getMenuFrontEnd(rolCodigo);
-    
+
     // Obtener información de la clínica
-    const infoClinica = await InfoClinica.findOne();
-    
+    const infoClinica = await infoClinicaRepository.findOne();
+
     // Datos para devolver (excluir contraseña)
     const { password: _, ...entidadSinPassword } = entidadAutenticada;
-    
+
     return {
       userOrMedico: entidadSinPassword, // Cambiado de "entidad" a "userOrMedico" para compatibilidad con frontend
       token,
@@ -237,18 +238,18 @@ export default class AuthService {
   public async revalidarToken(rut: string, rol: string) {
     console.log('🔍 Backend AuthService - revalidarToken iniciado con:', { rut, rol });
     let userOrMedico;
-    
+
     // Buscar según el rol
     if (rol === UserRole.USER || rol === UserRole.ADMIN) {
       console.log('🔍 Buscando usuario con rut:', rut);
-      userOrMedico = await Usuario.findOne({ 
+      userOrMedico = await usuarioRepository.findOne({
         where: { rut },
         include: [{
           model: Rol,
           as: 'rol'
         }]
       });
-      
+
       if (userOrMedico) {
         console.log('🔍 Usuario encontrado:', userOrMedico.nombre);
         // Convertir a JSON y asegurarnos de que rol sea una cadena para el frontend
@@ -266,7 +267,7 @@ export default class AuthService {
       }
     } else if (rol === UserRole.MEDICO) {
       console.log('🔍 Buscando médico con rut:', rut);
-      userOrMedico = await Medico.findOne({ 
+      userOrMedico = await medicoRepository.findOne({
         where: { rut },
         include: [{
           model: Rol,
@@ -288,16 +289,16 @@ export default class AuthService {
         console.log('🔍 No se encontró médico con rut:', rut);
       }
     }
-    
+
     if (!userOrMedico) {
       console.error('🔍 Error: Usuario o médico no encontrado con rut:', rut);
       throw new Error('Usuario o médico no encontrado');
     }
-    
+
     // Obtener información de la clínica
     console.log('🔍 Obteniendo información de la clínica');
-    const infoClinica = await InfoClinica.findOne();
-    
+    const infoClinica = await infoClinicaRepository.findOne();
+
     // Generar nuevo token
     console.log('🔍 Generando nuevo token para:', { rut, nombre: userOrMedico.nombre, rol });
     const newToken = await JwtGenerate.instance.generarJWT(
@@ -306,14 +307,14 @@ export default class AuthService {
       userOrMedico.apellidos,
       rol // Aquí ya recibimos el código del rol, no el ID
     );
-    
+
     // Obtener menú según el rol
     console.log('🔍 Obteniendo menú para rol:', rol);
     const menu = getMenuFrontEnd(rol);
-    
+
     // Excluir contraseña
     const { password, ...userOrMedicoSinPassword } = userOrMedico;
-    
+
     const resultado = {
       token: newToken,
       userOrMedico: userOrMedicoSinPassword,  // Ya está nombrado correctamente para compatibilidad
@@ -321,7 +322,7 @@ export default class AuthService {
       infoClinica,
       rol // Incluir explícitamente el rol en la respuesta
     };
-    
+
     console.log('🔍 Respuesta final de revalidarToken:', {
       token: newToken ? 'Token generado' : 'Error en token',
       userOrMedico: 'Datos procesados',
@@ -329,7 +330,7 @@ export default class AuthService {
       infoClinica: infoClinica ? 'Información de clínica presente' : 'Sin información de clínica',
       rol
     });
-    
+
     return resultado;
   }
 
@@ -342,40 +343,46 @@ export default class AuthService {
    */
   public async recuperarPassword(nombre: string, email: string) {
     // Intentar encontrar primero en usuarios
-    let entidad: any = await Usuario.findOne({ where: { nombre } });
-    
+    let entidad: any = await usuarioRepository.findOne({ where: { nombre } });
+    let esUsuario = true;
+
     if (!entidad) {
       // Si no es usuario, buscar en médicos
-      entidad = await Medico.findOne({ where: { nombre } });
-      
+      entidad = await medicoRepository.findOne({ where: { nombre } });
+      esUsuario = false;
+
       if (!entidad) {
         throw new Error('El usuario o médico no existe');
       }
     }
-    
+
     // Verificar si está inactivo
     if (entidad.estado === 'inactivo') {
       throw new Error('El usuario o médico está inactivo y no puede recuperar la contraseña');
     }
-    
+
     // Verificar email
     if (email !== entidad.email) {
       throw new Error('El email es incorrecto');
     }
-    
+
     // Generar nueva contraseña
     const password = generatePassword.generate({ length: 10, numbers: true });
-    
+
     // Encriptar nueva contraseña
     const salt = bcrypt.genSaltSync();
-    entidad.password = bcrypt.hashSync(password, salt);
-    
-    // Guardar cambios
-    await entidad.save();
-    
+    const hashedPassword = bcrypt.hashSync(password, salt);
+
+    // Actualizar contraseña usando el repositorio apropiado
+    if (esUsuario) {
+      await usuarioRepository.update(entidad, { password: hashedPassword });
+    } else {
+      await medicoRepository.update(entidad, { password: hashedPassword });
+    }
+
     // Enviar correo con nueva contraseña
     Email.instance.enviarEmail(email, nombre, password);
-    
+
     return {
       msg: `Correo enviado a: ${email} satisfactoriamente`
     };

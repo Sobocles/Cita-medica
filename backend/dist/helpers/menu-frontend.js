@@ -23,6 +23,7 @@ const getMenuFrontEnd = (rol = 'USER_ROLE') => {
         { label: 'Redactar hitorial medico', url: '/agregar-historial' },
         { label: 'Gestinar hitoriales medicos', url: '/gestionar-historiales' },
         { label: 'Citas medicas del medico', url: '/ver-citas' },
+        { label: 'Mi Perfil Profesional', url: '/mi-perfil-profesional' },
         { label: 'Cambiar contraseña', url: '/cambiar-password-medicos' },
     ];
     let menuItems = [];

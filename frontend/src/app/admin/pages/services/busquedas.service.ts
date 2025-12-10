@@ -33,21 +33,21 @@ export class BusquedasService {
             map((resp: any) => {
                 switch (tipo) {
                     case 'medicos':
-                        return resp.citas;
+                        return resp.medicos || [];
                     case 'usuarios':
-                        return resp.citas;
+                        return resp.usuarios || [];
                     case 'horario_medico':
-                        return resp.citas;
+                        return resp.horarios || [];
                     case 'tipo_cita':
-                        return resp.citas; 
+                        return resp.tipos || [];
                     case 'cita_medica':
-                        return resp;
-                        case 'facturas':
-                          return resp; 
-                          case 'cita_medico':
-                            return resp; 
-                            case 'historiales':
-                            return resp; 
+                        return resp.citas || [];
+                    case 'facturas':
+                        return resp.facturas || [];
+                    case 'cita_medico':
+                        return resp.citas || [];
+                    case 'historiales':
+                        return resp.historiales || [];
                     default:
                         return [];
                 }
