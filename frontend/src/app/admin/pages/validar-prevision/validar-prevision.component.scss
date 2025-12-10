@@ -1,0 +1,70 @@
+.card {
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border-radius: 0.5rem;
+  overflow: hidden;
+
+  .card-header {
+    border-bottom: 2px solid rgba(0, 0, 0, 0.125);
+
+    h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    p {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+  }
+}
+
+.table {
+  margin-bottom: 0;
+
+  thead {
+    th {
+      font-weight: 600;
+      text-align: center;
+      vertical-align: middle;
+    }
+  }
+
+  tbody {
+    tr {
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+      }
+
+      td {
+        vertical-align: middle;
+        text-align: center;
+      }
+    }
+  }
+}
+
+.badge {
+  padding: 0.4em 0.8em;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.btn {
+  transition: all 0.2s;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.15);
+  }
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+.alert {
+  border-radius: 0.5rem;
+}

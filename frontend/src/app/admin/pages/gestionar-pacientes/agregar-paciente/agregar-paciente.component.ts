@@ -17,6 +17,21 @@ export class AgregarPacienteComponent {
 
   formulario: FormGroup;
 
+  // Listas de Isapres en Chile
+  isapres = [
+    'Banmédica',
+    'Colmena',
+    'Consalud',
+    'CruzBlanca',
+    'Nueva Masvida',
+    'Vida Tres',
+    'Fundación Banco Estado',
+    'Otra'
+  ];
+
+  // Tramos de Fonasa
+  tramosFonasa = ['A', 'B', 'C', 'D'];
+
   constructor(
     private formBuilder: FormBuilder,
     private PacienteService: PacienteService,
@@ -32,7 +47,42 @@ export class AgregarPacienteComponent {
       fecha_nacimiento: ['', Validators.required],
       telefono: ['', [Validators.required, phoneValidator()]],
       direccion: ['', Validators.required],
+
+      // Campos de previsión
+      tipo_prevision: ['Particular', Validators.required],
+      nombre_isapre: [''],
+      tramo_fonasa: ['']
     });
+  }
+
+  /**
+   * Retorna true si el tipo de previsión es Isapre
+   */
+  get esIsapre(): boolean {
+    return this.formulario.get('tipo_prevision')?.value === 'Isapre';
+  }
+
+  /**
+   * Retorna true si el tipo de previsión es Fonasa
+   */
+  get esFonasa(): boolean {
+    return this.formulario.get('tipo_prevision')?.value === 'Fonasa';
+  }
+
+  /**
+   * Se ejecuta cuando cambia el tipo de previsión
+   * Limpia los campos que no corresponden
+   */
+  onTipoPrevisionChange(): void {
+    const tipoPrevision = this.formulario.get('tipo_prevision')?.value;
+
+    if (tipoPrevision !== 'Isapre') {
+      this.formulario.patchValue({ nombre_isapre: '' });
+    }
+
+    if (tipoPrevision !== 'Fonasa') {
+      this.formulario.patchValue({ tramo_fonasa: '' });
+    }
   }
 
 

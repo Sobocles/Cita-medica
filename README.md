@@ -1,119 +1,306 @@
-📌 Gestión de Citas Médicas - Plataforma Web
+# 🏥 Sistema de Gestión de Citas Médicas
 
-📖 Descripción del Proyecto
+Plataforma web full-stack para la gestión integral de citas médicas, desarrollada con Angular 16 y Node.js/Express con TypeScript.
 
-Este proyecto es una aplicación web diseñada para la gestión de citas médicas, enfocada principalmente en administradores. La plataforma permite:
+## 📋 Descripción
 
-✅ Crear, modificar y eliminar información relacionada con médicos, usuarios, tipos de citas y horarios médicos.<br>
-✅ Organizar citas según criterios como duración, precio y especialidad médica.<br>
-✅ Optimizar el proceso de gestión de citas en entornos médicos.<br>
+Sistema completo de gestión de citas médicas que permite:
 
-🏥 Usuario Administrador<br>
-🔹Email: Shadowhearts@gmail.com<br>
-🔹Password: Puppetmaster.9<br>
+- **Administradores**: Gestionar médicos, pacientes, tipos de citas, horarios y citas médicas
+- **Pacientes**: Registrarse, buscar médicos por especialidad, agendar citas y realizar pagos mediante MercadoPago
+- **Médicos**: Gestionar historiales médicos de pacientes y visualizar sus citas programadas
 
-🏥 Funcionamiento
+## 🚀 Inicio Rápido con Docker
 
-🔹 Administradores: Configuran la plataforma ingresando médicos, tipos de citas, horarios y demás información relevante.<br>
-🔹 Pacientes: Se registran en la aplicación, buscan citas disponibles según especialidad y fecha, y pueden agendar y pagar citas mediante Mercado Pago.<br>
-🔹 Médicos: Pueden registrar historiales médicos de sus pacientes y visualizar sus citas programadas.<br>
-🔹 Historial Médico: Los pacientes pueden revisar diagnósticos, medicamentos recetados y notas del médico.<br>
+### Prerrequisitos
 
-🛠 Tecnologías Utilizadas
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y en ejecución
+- Puerto 3308 (MySQL), 8000 (Backend) y 4200 (Frontend) disponibles
 
-🚀 Frontend<br>
-    Angular: Framework para aplicaciones web dinámicas.
-    Bootstrap 5: Estilos responsivos para mejorar la interfaz de usuario.
-    Angular Material: Componentes UI basados en Material Design.
+### Instrucciones de Ejecución
 
-💾 Backend<br>
-    TypeScript: Lenguaje tipado que mejora la robustez del código.
-    Node.js: Entorno de ejecución para JavaScript en el servidor.
-    Express: Framework ligero para la construcción de APIs.
-    Sequelize: ORM para manejar bases de datos SQL como MySQL.
+1. **Clonar el repositorio**
+   ```bash
+   git clone <url-del-repositorio>
+   cd CitaProyect-Fullstack
+   ```
 
-⚠ IMPORTANTE: LEER ANTES DE REVISAR EL PROYECTO
-1️⃣ Ejecutar Angular con conexión a Internet<br>
+2. **Configurar variables de entorno**
+   ```bash
+   # Copiar el archivo de ejemplo
+   cp backend/.env.example backend/.env
+   ```
 
-Antes de ejecutar el frontend con Angular, asegúrese de estar conectado a Internet.
-Esto es necesario porque el proyecto utiliza el CDN de Bootstrap, y sin conexión las interfaces se verán sin estilos.
+   **IMPORTANTE**: El archivo `.env` ya está configurado con valores de desarrollo. Si deseas usar la funcionalidad de pagos con MercadoPago, deberás actualizar el token de acceso (ver sección de MercadoPago más abajo).
 
-Comandos para ejecutar Angular:
+3. **Levantar la aplicación completa**
+   ```bash
+   docker-compose up
+   ```
 
-npm install
-ng serve
+   Esto iniciará automáticamente:
+   - **MySQL** en puerto 3308
+   - **Backend** en puerto 8000
+   - **Frontend** en puerto 4200
 
-2️⃣ Simulación de pagos con Mercado Pago<br>
+4. **Acceder a la aplicación**
+   - **Frontend**: http://localhost:4200
+   - **Backend API**: http://localhost:8000/api
 
-Para probar la compra de citas médicas, se debe usar ngrok para generar un enlace público, ya que el backend se ejecuta localmente.
+5. **Credenciales de acceso**
 
-📌 Generar un enlace público con ngrok<br>
+   Al iniciar por primera vez, el sistema crea automáticamente un usuario administrador:
 
-Una vez que el backend esté corriendo en el puerto 8000, ejecute el siguiente comando en la terminal:
+   **Administrador**:
+   - Email: `admin@sistema.com`
+   - Password: `admin123`
 
-.\ngrok.exe http 8000
+---
 
-Esto generará un enlace similar a:<br>
+## 🎯 Funcionalidades Principales
 
-https://702b-2800-150-14e-fe7-94e6-e2dd-926e-ad09.ngrok.io
+### Administradores
+- ✅ Gestión completa de médicos (CRUD)
+- ✅ Gestión de pacientes
+- ✅ Configuración de tipos de citas (especialidades, precios, duración)
+- ✅ Administración de horarios médicos
+- ✅ Visualización y gestión de citas programadas
 
-🔹 Configurar la URL en Mercado Pago<br>
-Este enlace debe actualizarse en el controlador controller/mercadoPago, dentro de la variable notification_url:
+### Pacientes
+- ✅ Registro y autenticación
+- ✅ Búsqueda de médicos por especialidad y fecha
+- ✅ Reserva de citas médicas
+- ✅ Pago integrado con MercadoPago
+- ✅ Visualización de historial médico
 
-notification_url: "https://702b-2800-150-14e-fe7-94e6-e2dd-926e-ad09.ngrok.io/api/mercadoPago/webhook"
+### Médicos
+- ✅ Registro de historiales médicos
+- ✅ Visualización de citas programadas
+- ✅ Gestión de perfil profesional
 
-⚠ Nota:<br>
-Cada vez que se cierre el backend en el puerto 8000, la URL generada por ngrok expirará. Debe repetirse este proceso cada vez que se reinicie el proyecto.
-3️⃣ Acceso a Mercado Pago con un usuario de prueba<br>
+---
 
-Antes de probar la compra, debe iniciar sesión en Mercado Pago con un usuario de prueba.
+## 🛠 Stack Tecnológico
 
-📌 Instrucciones<br>
+### Frontend
+- **Angular 16**: Framework principal
+- **TypeScript**: Lenguaje de programación
+- **Bootstrap 5**: Framework CSS (vía CDN)
+- **Angular Material**: Componentes UI
+- **RxJS**: Programación reactiva
 
-    Acceda a la página de prueba de Mercado Pago:
-    🔗 Mercado Pago Developers
-    Haga clic en "Ingresar" en la esquina superior derecha.
-    Use las siguientes credenciales:
+### Backend
+- **Node.js**: Entorno de ejecución
+- **Express**: Framework web
+- **TypeScript**: Lenguaje de programación
+- **Sequelize**: ORM para MySQL
+- **JWT**: Autenticación
+- **bcrypt**: Encriptación de contraseñas
 
-    Usuario: TESTUSER90381648
-    Contraseña: tCfitcy8wl
+### Base de Datos
+- **MySQL 8.0**: Base de datos relacional
 
-📌 Ingresar tarjetas de prueba<br>
-Para realizar pagos simulados, use tarjetas de prueba.
-🔗 Tarjetas de prueba de Mercado Pago
+### Servicios Externos
+- **MercadoPago**: Procesamiento de pagos
 
-Ejemplo de tarjeta de prueba Visa:<br>
+---
 
-Número: 4023 6535 2391 4373
-Código de seguridad: 123
-Fecha de caducidad: 11/25
-Titular: "APRO" (para pagos aprobados) o "OTHE" (para pagos rechazados)
+## 💳 Configuración de Pagos con MercadoPago (Opcional)
 
-🔥 Ejecución del Proyecto<br>
-🚀 Iniciar el Frontend (Angular)<br>
+Si deseas probar la funcionalidad de pagos, sigue estos pasos:
+
+### 1. Configurar ngrok para webhooks
+
+MercadoPago requiere una URL pública para enviar notificaciones de pago. En desarrollo local, usa ngrok:
 
 ```bash
-npm install
-ng serve
+# Descargar ngrok desde https://ngrok.com/download
+# Ejecutar (con el backend corriendo):
+ngrok http 8000
 ```
 
-🔧 Iniciar el Backend (Node.js)<br>
+Esto generará una URL pública similar a:
+```
+https://xxxx-xxxx-xxxx.ngrok-free.app
+```
+
+### 2. Actualizar configuración
+
+Edita el archivo `backend/.env` y actualiza la variable `NGROK_URL`:
+```env
+NGROK_URL=https://tu-url-generada.ngrok-free.app
+```
+
+**IMPORTANTE**: Cada vez que detengas el backend, la URL de ngrok expirará. Deberás repetir este proceso.
+
+### 3. Iniciar sesión en MercadoPago
+
+Para realizar pagos de prueba:
+
+1. Accede a [MercadoPago Developers](https://www.mercadopago.cl/developers)
+2. Haz clic en "Ingresar" (esquina superior derecha)
+3. Usa las credenciales de prueba:
+   - **Usuario**: `TESTUSER90381648`
+   - **Contraseña**: `tCfitcy8wl`
+
+### 4. Tarjetas de prueba
+
+Usa estas tarjetas para simular pagos:
+
+**Visa - Pago Aprobado**:
+- Número: `4023 6535 2391 4373`
+- CVV: `123`
+- Fecha: `11/25`
+- Titular: `APRO`
+
+**Visa - Pago Rechazado**:
+- Número: `4023 6535 2391 4373`
+- CVV: `123`
+- Fecha: `11/25`
+- Titular: `OTHE`
+
+Más tarjetas de prueba: [MercadoPago Test Cards](https://www.mercadopago.cl/developers/es/docs/checkout-pro/additional-content/test-cards)
+
+---
+
+## 🔧 Desarrollo sin Docker
+
+Si prefieres ejecutar el proyecto sin Docker:
+
+### Backend
+
 ```bash
+cd backend
+
+# Instalar dependencias
+npm install
+
+# Configurar base de datos MySQL local
+# Crear base de datos 'gestor'
+
+# Configurar .env con tus credenciales de MySQL local
+# DB_HOST=localhost
+# DB_PORT=3306
+
+# Compilar TypeScript
+npm run build
+# o en modo watch
+npm run watch
+
+# Ejecutar servidor
+npm start
+# o con nodemon
 nodemon dist/app.js
 ```
 
-Para asegurarse de que los cambios en TypeScript se reflejen en el código JavaScript, ejecute:
+### Frontend
+
 ```bash
-tsc --watch
+cd frontend
+
+# Instalar dependencias
+npm install
+
+# Ejecutar servidor de desarrollo
+npm start
+# o
+ng serve
 ```
-⚠ Importante:<br>
-Antes de cambiar la notification_url en Mercado Pago para probar la compra de una cita médica, asegúrese de ejecutar tsc --watch.
 
-📩 Contacto<br>
+**NOTA**: El frontend requiere conexión a internet ya que utiliza Bootstrap desde CDN.
 
-Para más información sobre el proyecto, puede contactar al desarrollador:
-📧 Correo: smoralespincheira@gmail.com
+---
 
-🎯 Conclusión<br>
-Este README proporciona una guía detallada sobre la configuración y ejecución del proyecto, asegurando que puedas probar todas sus funcionalidades sin inconvenientes. 🚀💻
+## 📁 Estructura del Proyecto
 
+```
+CitaProyect-Fullstack/
+├── backend/                 # API REST (Node.js + Express + TypeScript)
+│   ├── controllers/         # Controladores de rutas
+│   ├── services/           # Lógica de negocio
+│   ├── repositories/       # Capa de acceso a datos
+│   ├── models/             # Modelos Sequelize
+│   ├── routes/             # Definición de rutas
+│   ├── middlewares/        # Validación JWT, etc.
+│   ├── db/                 # Configuración de base de datos
+│   └── dist/               # JavaScript compilado
+├── frontend/               # Aplicación Angular
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── admin/      # Módulo de administración
+│   │   │   ├── medicos/    # Módulo de médicos
+│   │   │   ├── pacientes/  # Módulo de pacientes
+│   │   │   └── auth/       # Autenticación
+│   │   └── ...
+└── docker-compose.yml      # Configuración Docker
+```
+
+---
+
+## 🗄 Base de Datos
+
+La base de datos se inicializa automáticamente al ejecutar Docker con:
+
+- **3 roles**: Administrador, Médico, Paciente
+- **Usuario administrador por defecto** (credenciales arriba)
+- **Tablas**: usuarios, medicos, citas_medicas, tipos_citas, horarios_medicos, historiales_medicos, facturas
+
+---
+
+## 🐳 Comandos Docker Útiles
+
+```bash
+# Iniciar servicios
+docker-compose up
+
+# Iniciar en segundo plano
+docker-compose up -d
+
+# Detener servicios
+docker-compose down
+
+# Ver logs
+docker-compose logs -f
+
+# Reconstruir contenedores (si cambias Dockerfile)
+docker-compose up --build
+
+# Eliminar todo (incluye volúmenes de base de datos)
+docker-compose down -v
+```
+
+---
+
+## 🔒 Seguridad
+
+- Autenticación mediante **JWT**
+- Contraseñas encriptadas con **bcrypt**
+- Validación de datos con **express-validator**
+- Variables de entorno para credenciales sensibles
+- **.env** excluido del repositorio (usar `.env.example` como plantilla)
+
+---
+
+## 📞 Contacto
+
+**Desarrollador**: Sebastián Morales Pincheira
+**Email**: smoralespincheira@gmail.com
+
+---
+
+## 📝 Notas Adicionales
+
+- **Conexión a Internet requerida**: El frontend usa Bootstrap desde CDN
+- **Puertos utilizados**: 3308 (MySQL), 8000 (Backend), 4200 (Frontend)
+- **Persistencia de datos**: MySQL usa volúmenes de Docker para persistir datos entre reinicios
+- **Hot reload**: Los contenedores están configurados para recargar automáticamente al detectar cambios en el código
+
+---
+
+## 🎓 Licencia
+
+Este proyecto es de código abierto y está disponible para fines educativos y de demostración.
+
+---
+
+**¡Gracias por revisar este proyecto!** 🚀

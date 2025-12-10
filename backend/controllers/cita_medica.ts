@@ -235,4 +235,54 @@ export default class Cita {
             return ResponseHelper.serverError(res, 'Error al eliminar cita', error);
         }
     };
+
+
+    /**
+     * Valida la previsión del paciente el día de la cita (uso presencial)
+     * Permite 3 escenarios:
+     * 1. Validó correctamente (trae documentos) -> marca prevision_validada = true
+     * 2. No trajo documentos -> registra diferencia_pagada_efectivo
+     * 3. Mintió sobre previsión -> actualiza tipo_prevision real del usuario
+     */
+    public validarPrevision = async (req: Request, res: Response) => {
+        try {
+            const idCita = parseInt(req.params.idCita);
+            const {
+                validado,              // true/false si validó correctamente
+                diferenciaEfectivo,    // monto pagado en efectivo si no validó
+                tipoPrevisionReal,     // tipo real si mintió
+                observaciones          // comentarios adicionales
+            } = req.body;
+
+            const resultado = await citaService.validarPrevision(
+                idCita,
+                validado,
+                diferenciaEfectivo,
+                tipoPrevisionReal,
+                observaciones
+            );
+
+            return ResponseHelper.successWithCustomData(res, {
+                cita: resultado.cita,
+                usuario: resultado.usuario,
+                mensaje: resultado.mensaje
+            });
+        } catch (error: any) {
+            console.error('Error al validar previsión:', error);
+
+            if (error.message === 'Cita no encontrada') {
+                return ResponseHelper.notFound(res, error.message);
+            }
+
+            if (error.message === 'Esta cita no requiere validación de previsión') {
+                return ResponseHelper.badRequest(res, error.message);
+            }
+
+            if (error.message === 'La previsión de esta cita ya fue validada anteriormente') {
+                return ResponseHelper.badRequest(res, error.message);
+            }
+
+            return ResponseHelper.serverError(res, 'Error al validar la previsión', error);
+        }
+    };
 }

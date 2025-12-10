@@ -1,5 +1,7 @@
 import citaRepository from '../repositories/CitaRepository';
 import { CitaMedicaAttributes } from '../models/cita_medica';
+import Usuario from '../models/usuario';
+import db from '../db/connection';
 
 /**
  * Interfaz para el resultado de consultas con paginación
@@ -194,6 +196,119 @@ export class CitaService {
         await citaRepository.softDelete(idCita);
 
         return { mensaje: 'Cita actualizada a inactivo correctamente' };
+    }
+
+    /**
+     * Valida la previsión del paciente el día de la cita
+     * Maneja 3 escenarios:
+     * 1. Validó correctamente (trae documentos) -> marca prevision_validada = true
+     * 2. No trajo documentos -> registra diferencia_pagada_efectivo
+     * 3. Mintió sobre previsión -> actualiza tipo_prevision real del usuario
+     */
+    async validarPrevision(
+        idCita: number,
+        validado: boolean,
+        diferenciaEfectivo?: number,
+        tipoPrevisionReal?: 'Fonasa' | 'Isapre' | 'Particular',
+        observaciones?: string
+    ) {
+        const transaction = await db.transaction();
+
+        try {
+            // Cargar cita con paciente
+            const cita = await citaRepository.findByPk(idCita);
+
+            if (!cita) {
+                throw new Error('Cita no encontrada');
+            }
+
+            if (!cita.requiere_validacion_prevision) {
+                throw new Error('Esta cita no requiere validación de previsión');
+            }
+
+            if (cita.prevision_validada) {
+                throw new Error('La previsión de esta cita ya fue validada anteriormente');
+            }
+
+            // Cargar el usuario/paciente
+            const usuario = await Usuario.findByPk(cita.rut_paciente, { transaction });
+
+            if (!usuario) {
+                throw new Error('Paciente no encontrado');
+            }
+
+            let mensaje = '';
+
+            if (validado) {
+                // ESCENARIO 1: Validó correctamente (trajo documentos)
+                await cita.update({
+                    prevision_validada: true,
+                    observaciones_validacion: observaciones || 'Previsión validada correctamente con documentos'
+                }, { transaction });
+
+                await usuario.update({
+                    prevision_validada: true,
+                    fecha_validacion_prevision: new Date()
+                }, { transaction });
+
+                mensaje = 'Previsión validada correctamente. El paciente presentó los documentos requeridos.';
+
+            } else if (diferenciaEfectivo !== undefined && diferenciaEfectivo > 0) {
+                // ESCENARIO 2: No trajo documentos, pagó diferencia en efectivo
+                await cita.update({
+                    prevision_validada: false,
+                    diferencia_pagada_efectivo: diferenciaEfectivo,
+                    observaciones_validacion: observaciones || 'No presentó documentos. Pagó diferencia en efectivo.'
+                }, { transaction });
+
+                // Si mintió sobre la previsión y se especificó la real
+                if (tipoPrevisionReal && tipoPrevisionReal !== cita.tipo_prevision_aplicada) {
+                    await usuario.update({
+                        tipo_prevision: tipoPrevisionReal,
+                        prevision_validada: false
+                    }, { transaction });
+
+                    mensaje = `No presentó documentos. Pagó $${diferenciaEfectivo.toLocaleString('es-CL')} en efectivo. Su previsión real es ${tipoPrevisionReal}.`;
+                } else {
+                    mensaje = `No presentó documentos. Pagó $${diferenciaEfectivo.toLocaleString('es-CL')} en efectivo.`;
+                }
+
+            } else if (tipoPrevisionReal) {
+                // ESCENARIO 3: Mintió sobre previsión (actualizamos el tipo real)
+                await cita.update({
+                    prevision_validada: false,
+                    observaciones_validacion: observaciones || `Previsión real: ${tipoPrevisionReal}. No coincide con la declarada.`
+                }, { transaction });
+
+                await usuario.update({
+                    tipo_prevision: tipoPrevisionReal,
+                    prevision_validada: false
+                }, { transaction });
+
+                mensaje = `Previsión actualizada. El paciente tiene ${tipoPrevisionReal}, no ${cita.tipo_prevision_aplicada}.`;
+
+            } else {
+                // ESCENARIO 4: No validó y no pagó diferencia (reprogramar cita)
+                await cita.update({
+                    prevision_validada: false,
+                    observaciones_validacion: observaciones || 'No presentó documentos y no pagó diferencia.'
+                }, { transaction });
+
+                mensaje = 'No presentó documentos. La cita debe ser reprogramada o el paciente debe pagar la diferencia.';
+            }
+
+            await transaction.commit();
+
+            return {
+                cita,
+                usuario,
+                mensaje
+            };
+
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
     }
 }
 

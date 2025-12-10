@@ -33,6 +33,22 @@ TipoCita.init({
         allowNull: true,
         defaultValue: 'activo' // Estado por defecto es 'activo'
     },
+    // Precios diferenciados por tipo de previsión
+    precio_fonasa: {
+        type: sequelize_1.DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        comment: 'Precio para pacientes con Fonasa'
+    },
+    precio_isapre: {
+        type: sequelize_1.DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        comment: 'Precio para pacientes con Isapre'
+    },
+    precio_particular: {
+        type: sequelize_1.DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        comment: 'Precio para pacientes particulares'
+    },
 }, {
     sequelize: connection_1.default,
     modelName: 'TipoCita',

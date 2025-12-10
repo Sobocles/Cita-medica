@@ -30,7 +30,9 @@ const getDocumentosColeccion = (req, res) => __awaiter(void 0, void 0, void 0, f
         const { tabla, busqueda } = req.params;
         console.log('Búsqueda en tabla:', tabla, 'término:', busqueda);
         const data = yield busqueda_service_1.default.buscarEnColeccion(tabla, busqueda);
-        return response_helper_1.default.successWithCustomData(res, { citas: data });
+        // Retornar con el nombre apropiado según el tipo de búsqueda
+        const responseKey = getResponseKey(tabla);
+        return response_helper_1.default.successWithCustomData(res, { [responseKey]: data });
     }
     catch (error) {
         console.error('Error en búsqueda por colección:', error);
@@ -41,6 +43,22 @@ const getDocumentosColeccion = (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 });
 exports.getDocumentosColeccion = getDocumentosColeccion;
+/**
+ * Obtiene el nombre de la propiedad de respuesta según el tipo de búsqueda
+ */
+function getResponseKey(tabla) {
+    const keyMap = {
+        'usuarios': 'usuarios',
+        'medicos': 'medicos',
+        'horario_medico': 'horarios',
+        'cita_medica': 'citas',
+        'cita_medico': 'citas',
+        'tipo_cita': 'tipos',
+        'facturas': 'facturas',
+        'historiales': 'historiales'
+    };
+    return keyMap[tabla] || 'resultados';
+}
 /**
  * Busca en todas las colecciones (búsqueda global)
  */

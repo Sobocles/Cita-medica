@@ -74,12 +74,19 @@
                 <td class="text-capitalize">{{medico.especialidad_medica}}</td>
                 <td class="text-center">
                   <div class="btn-group">
-                    <button type="button" 
+                    <button type="button"
                             class="btn btn-outline-primary btn-sm"
                             data-toggle="tooltip"
-                            title="Editar"
+                            title="Editar Datos Básicos"
                             (click)="editarMedico(medico)">
                       <i class="fa fa-pencil"></i>
+                    </button>
+                    <button type="button"
+                            class="btn btn-outline-info btn-sm"
+                            data-toggle="tooltip"
+                            title="Editar Perfil Profesional"
+                            [routerLink]="['/ad/medico', medico.rut, 'editar-perfil']">
+                      <i class="fa fa-user-md"></i>
                     </button>
                     <button type="button"
                             class="btn btn-outline-danger btn-sm"

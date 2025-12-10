@@ -6,6 +6,11 @@ export interface Usuario {
     fecha_nacimiento: string;
     telefono: string;
     direccion: string;
+
+    // Campos de previsión de salud
+    tipo_prevision?: 'Fonasa' | 'Isapre' | 'Particular';
+    nombre_isapre?: string;
+    tramo_fonasa?: 'A' | 'B' | 'C' | 'D';
 }
 
 export interface UsuariosResponse {

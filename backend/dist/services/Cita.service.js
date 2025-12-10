@@ -14,6 +14,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CitaService = void 0;
 const CitaRepository_1 = __importDefault(require("../repositories/CitaRepository"));
+const usuario_1 = __importDefault(require("../models/usuario"));
+const connection_1 = __importDefault(require("../db/connection"));
 /**
  * Servicio que contiene la lógica de negocio para las citas médicas
  */
@@ -171,6 +173,98 @@ class CitaService {
             }
             yield CitaRepository_1.default.softDelete(idCita);
             return { mensaje: 'Cita actualizada a inactivo correctamente' };
+        });
+    }
+    /**
+     * Valida la previsión del paciente el día de la cita
+     * Maneja 3 escenarios:
+     * 1. Validó correctamente (trae documentos) -> marca prevision_validada = true
+     * 2. No trajo documentos -> registra diferencia_pagada_efectivo
+     * 3. Mintió sobre previsión -> actualiza tipo_prevision real del usuario
+     */
+    validarPrevision(idCita, validado, diferenciaEfectivo, tipoPrevisionReal, observaciones) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const transaction = yield connection_1.default.transaction();
+            try {
+                // Cargar cita con paciente
+                const cita = yield CitaRepository_1.default.findByPk(idCita);
+                if (!cita) {
+                    throw new Error('Cita no encontrada');
+                }
+                if (!cita.requiere_validacion_prevision) {
+                    throw new Error('Esta cita no requiere validación de previsión');
+                }
+                if (cita.prevision_validada) {
+                    throw new Error('La previsión de esta cita ya fue validada anteriormente');
+                }
+                // Cargar el usuario/paciente
+                const usuario = yield usuario_1.default.findByPk(cita.rut_paciente, { transaction });
+                if (!usuario) {
+                    throw new Error('Paciente no encontrado');
+                }
+                let mensaje = '';
+                if (validado) {
+                    // ESCENARIO 1: Validó correctamente (trajo documentos)
+                    yield cita.update({
+                        prevision_validada: true,
+                        observaciones_validacion: observaciones || 'Previsión validada correctamente con documentos'
+                    }, { transaction });
+                    yield usuario.update({
+                        prevision_validada: true,
+                        fecha_validacion_prevision: new Date()
+                    }, { transaction });
+                    mensaje = 'Previsión validada correctamente. El paciente presentó los documentos requeridos.';
+                }
+                else if (diferenciaEfectivo !== undefined && diferenciaEfectivo > 0) {
+                    // ESCENARIO 2: No trajo documentos, pagó diferencia en efectivo
+                    yield cita.update({
+                        prevision_validada: false,
+                        diferencia_pagada_efectivo: diferenciaEfectivo,
+                        observaciones_validacion: observaciones || 'No presentó documentos. Pagó diferencia en efectivo.'
+                    }, { transaction });
+                    // Si mintió sobre la previsión y se especificó la real
+                    if (tipoPrevisionReal && tipoPrevisionReal !== cita.tipo_prevision_aplicada) {
+                        yield usuario.update({
+                            tipo_prevision: tipoPrevisionReal,
+                            prevision_validada: false
+                        }, { transaction });
+                        mensaje = `No presentó documentos. Pagó $${diferenciaEfectivo.toLocaleString('es-CL')} en efectivo. Su previsión real es ${tipoPrevisionReal}.`;
+                    }
+                    else {
+                        mensaje = `No presentó documentos. Pagó $${diferenciaEfectivo.toLocaleString('es-CL')} en efectivo.`;
+                    }
+                }
+                else if (tipoPrevisionReal) {
+                    // ESCENARIO 3: Mintió sobre previsión (actualizamos el tipo real)
+                    yield cita.update({
+                        prevision_validada: false,
+                        observaciones_validacion: observaciones || `Previsión real: ${tipoPrevisionReal}. No coincide con la declarada.`
+                    }, { transaction });
+                    yield usuario.update({
+                        tipo_prevision: tipoPrevisionReal,
+                        prevision_validada: false
+                    }, { transaction });
+                    mensaje = `Previsión actualizada. El paciente tiene ${tipoPrevisionReal}, no ${cita.tipo_prevision_aplicada}.`;
+                }
+                else {
+                    // ESCENARIO 4: No validó y no pagó diferencia (reprogramar cita)
+                    yield cita.update({
+                        prevision_validada: false,
+                        observaciones_validacion: observaciones || 'No presentó documentos y no pagó diferencia.'
+                    }, { transaction });
+                    mensaje = 'No presentó documentos. La cita debe ser reprogramada o el paciente debe pagar la diferencia.';
+                }
+                yield transaction.commit();
+                return {
+                    cita,
+                    usuario,
+                    mensaje
+                };
+            }
+            catch (error) {
+                yield transaction.rollback();
+                throw error;
+            }
         });
     }
 }

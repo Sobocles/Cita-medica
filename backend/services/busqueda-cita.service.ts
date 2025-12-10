@@ -25,10 +25,15 @@ interface BloqueDisponible {
   medicoNombre: string;
   hora_inicio: string;
   hora_fin: string;
-  precio: number;
+  precio: number; // Precio base (para backwards compatibility)
   idTipoCita: number;
   especialidad: string;
   fecha: string;
+
+  // Precios diferenciados por tipo de previsión
+  precio_fonasa?: number;
+  precio_isapre?: number;
+  precio_particular?: number;
 }
 
 class BusquedaCitaService {
@@ -119,7 +124,10 @@ class BusquedaCitaService {
     fecha: string,
     precioCita: number,
     idTipoCita: number,
-    especialidad: string
+    especialidad: string,
+    precio_fonasa?: number,
+    precio_isapre?: number,
+    precio_particular?: number
   ): Promise<BloqueDisponible[]> {
     if (!horarioMedico || !horarioMedico.horainicio || !horarioMedico.horafinalizacion) {
       throw new Error('Datos del horario del médico no proporcionados correctamente.');
@@ -150,7 +158,10 @@ class BusquedaCitaService {
       idTipoCita,
       especialidad,
       medicoRut,
-      medicoNombre
+      medicoNombre,
+      precio_fonasa,
+      precio_isapre,
+      precio_particular
     );
 
     // Filtrar bloques ya ocupados
@@ -168,7 +179,10 @@ class BusquedaCitaService {
     idTipoCita: number,
     especialidad: string,
     medicoRut: string,
-    medicoNombre: string
+    medicoNombre: string,
+    precio_fonasa?: number,
+    precio_isapre?: number,
+    precio_particular?: number
   ): BloqueDisponible[] {
     const horarioInicio = timeToMinutes(horarioMedico.horainicio);
     const horarioFin = timeToMinutes(horarioMedico.horafinalizacion);
@@ -193,7 +207,10 @@ class BusquedaCitaService {
           precio: precioCita,
           idTipoCita,
           especialidad,
-          fecha
+          fecha,
+          precio_fonasa,
+          precio_isapre,
+          precio_particular
         });
       }
     }
@@ -283,7 +300,10 @@ class BusquedaCitaService {
         fecha,
         tipoCita.precio,
         tipoCita.idTipoCita,
-        tipoCita.especialidad_medica
+        tipoCita.especialidad_medica,
+        tipoCita.precio_fonasa,
+        tipoCita.precio_isapre,
+        tipoCita.precio_particular
       )
     );
 

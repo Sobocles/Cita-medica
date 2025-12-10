@@ -92,6 +92,19 @@ class MedicoService {
         });
     }
     /**
+     * Obtiene un médico por su RUT (retorna la instancia del modelo de Sequelize)
+     * Usar este método cuando se necesite ejecutar métodos de Sequelize como .update()
+     */
+    getMedicoModelById(rut) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const medico = yield medico_repository_1.default.findById(rut);
+            if (!medico) {
+                throw new Error('Médico no encontrado');
+            }
+            return medico; // Retorna la instancia del modelo, no JSON
+        });
+    }
+    /**
      * Crea un nuevo médico con validaciones
      */
     createMedico(medicoData) {
@@ -199,6 +212,31 @@ class MedicoService {
             const hashedPassword = bcrypt_1.default.hashSync(newPassword, salt);
             // Actualizar contraseña
             return medico_repository_1.default.update(medico, { password: hashedPassword });
+        });
+    }
+    /**
+     * Actualiza la imagen de perfil de un médico (S3 key)
+     * @param rut - RUT del médico
+     * @param s3Key - Key de S3 de la imagen (null o undefined para eliminar)
+     */
+    updateMedicoImage(rut, s3Key) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const medico = yield medico_repository_1.default.findById(rut);
+            if (!medico) {
+                throw new Error('Médico no encontrado');
+            }
+            const medicoActualizado = yield medico_repository_1.default.updateByRut(rut, {
+                imagen_s3_key: s3Key === null ? undefined : s3Key
+            });
+            if (!medicoActualizado) {
+                throw new Error('Error al actualizar imagen del médico');
+            }
+            // Procesar para asignar el rol como string
+            const medicoJSON = medicoActualizado.toJSON();
+            if (medicoJSON.rol && medicoJSON.rol.codigo) {
+                medicoJSON.rol = medicoJSON.rol.codigo;
+            }
+            return medicoJSON;
         });
     }
 }

@@ -6,6 +6,7 @@ import CitaMedica from '../models/cita_medica';
 import TipoCita from '../models/tipo_cita';
 import Factura from '../models/factura';
 import HistorialMedico from '../models/historial_medico';
+import Rol from '../models/rol';
 
 /**
  * Servicio para manejar búsquedas en diferentes colecciones
@@ -22,13 +23,30 @@ class BusquedaService {
    * Busca en la colección de usuarios
    */
   async buscarUsuarios(termino: string): Promise<any[]> {
-    return Usuario.findAll({
-      attributes: ['rut', 'nombre', 'apellidos', 'email', 'fecha_nacimiento', 'telefono', 'direccion', 'rol'],
+    const usuarios = await Usuario.findAll({
+      attributes: ['rut', 'nombre', 'apellidos', 'email', 'fecha_nacimiento', 'telefono', 'direccion', 'rolId'],
       where: {
         nombre: { [Op.like]: `%${termino}%` },
         estado: 'activo'
-      }
+      },
+      include: [{
+        model: Rol,
+        as: 'rol',
+        attributes: ['codigo']
+      }]
     });
+
+    // Transformar para incluir el código del rol como propiedad directa
+    return usuarios.map((usuario: any) => ({
+      rut: usuario.rut,
+      nombre: usuario.nombre,
+      apellidos: usuario.apellidos,
+      email: usuario.email,
+      fecha_nacimiento: usuario.fecha_nacimiento,
+      telefono: usuario.telefono,
+      direccion: usuario.direccion,
+      rol: usuario.rol?.codigo || 'USER_ROLE'
+    }));
   }
 
   /**

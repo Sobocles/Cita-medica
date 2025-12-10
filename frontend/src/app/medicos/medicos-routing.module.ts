@@ -8,6 +8,7 @@ import { AuthGuard } from '../auth/guards/auth.guard';
 import { VerCitasMedicasComponent } from './ver-citas-medicas/ver-citas-medicas.component';
 import { medicGuard } from '../auth/guards/medic.guard';
 import { CambiarPasswordMedicoComponent } from './cambiar-password-medico/cambiar-password-medico.component';
+import { MiPerfilProfesionalComponent } from './mi-perfil-profesional/mi-perfil-profesional.component';
 
 
 
@@ -21,9 +22,10 @@ const routes: Routes = [
       { path: 'editar-historial/:id', component: HistorialComponent, canActivate: [AuthGuard, medicGuard] },
       { path: 'cambiar-password-medicos', component: CambiarPasswordMedicoComponent, canActivate: [AuthGuard, medicGuard] },
       { path: 'ver-citas', component: VerCitasMedicasComponent, canActivate: [AuthGuard, medicGuard] },
+      { path: 'mi-perfil-profesional', component: MiPerfilProfesionalComponent, canActivate: [AuthGuard, medicGuard] },
       // Elimina esta línea duplicada
       // { path: 'agregar-historial', component: HistorialComponent, canActivate: [AuthGuard, medicGuard] },
-      
+
       { path: '**', redirectTo: 'gestionar-historiales' },
     ],
   },

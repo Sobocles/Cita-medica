@@ -138,6 +138,74 @@
       </div>
     </div>
 
+    <mat-divider class="section-divider"></mat-divider>
+
+    <!-- Sección de Previsión de Salud -->
+    <div class="form-section">
+      <h2 class="section-title">
+        <mat-icon class="section-icon">health_and_safety</mat-icon>
+        Previsión de Salud
+      </h2>
+
+      <div class="form-row">
+        <!-- Tipo de Previsión -->
+        <div class="form-field full-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Tipo de Previsión</mat-label>
+            <mat-select formControlName="tipo_prevision" (selectionChange)="onTipoPrevisionChange()">
+              <mat-option value="Particular">
+                <mat-icon>person</mat-icon>
+                Particular
+              </mat-option>
+              <mat-option value="Fonasa">
+                <mat-icon>account_balance</mat-icon>
+                Fonasa
+              </mat-option>
+              <mat-option value="Isapre">
+                <mat-icon>business</mat-icon>
+                Isapre
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix>local_hospital</mat-icon>
+            <mat-hint>Seleccione su sistema de salud</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Nombre de Isapre (solo si seleccionó Isapre) -->
+      <div class="form-row" *ngIf="esIsapre">
+        <div class="form-field full-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Isapre</mat-label>
+            <mat-select formControlName="nombre_isapre">
+              <mat-option value="">Seleccione su Isapre</mat-option>
+              <mat-option *ngFor="let isapre of isapres" [value]="isapre">
+                {{ isapre }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix>business_center</mat-icon>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Tramo Fonasa (solo si seleccionó Fonasa) -->
+      <div class="form-row" *ngIf="esFonasa">
+        <div class="form-field full-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Tramo Fonasa</mat-label>
+            <mat-select formControlName="tramo_fonasa">
+              <mat-option value="">Seleccione su tramo</mat-option>
+              <mat-option *ngFor="let tramo of tramosFonasa" [value]="tramo">
+                Tramo {{ tramo }}
+              </mat-option>
+            </mat-select>
+            <mat-icon matSuffix>layers</mat-icon>
+            <mat-hint>Tramo según su nivel de ingresos</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+    </div>
+
     <div class="form-actions">
       <button mat-flat-button type="button" routerLink="/auth/login" class="secondary-button">
         <mat-icon>arrow_back</mat-icon>

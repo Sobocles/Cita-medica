@@ -187,6 +187,42 @@ class Cita {
                 return response_helper_1.default.serverError(res, 'Error al eliminar cita', error);
             }
         });
+        /**
+         * Valida la previsión del paciente el día de la cita (uso presencial)
+         * Permite 3 escenarios:
+         * 1. Validó correctamente (trae documentos) -> marca prevision_validada = true
+         * 2. No trajo documentos -> registra diferencia_pagada_efectivo
+         * 3. Mintió sobre previsión -> actualiza tipo_prevision real del usuario
+         */
+        this.validarPrevision = (req, res) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                const idCita = parseInt(req.params.idCita);
+                const { validado, // true/false si validó correctamente
+                diferenciaEfectivo, // monto pagado en efectivo si no validó
+                tipoPrevisionReal, // tipo real si mintió
+                observaciones // comentarios adicionales
+                 } = req.body;
+                const resultado = yield Cita_service_1.default.validarPrevision(idCita, validado, diferenciaEfectivo, tipoPrevisionReal, observaciones);
+                return response_helper_1.default.successWithCustomData(res, {
+                    cita: resultado.cita,
+                    usuario: resultado.usuario,
+                    mensaje: resultado.mensaje
+                });
+            }
+            catch (error) {
+                console.error('Error al validar previsión:', error);
+                if (error.message === 'Cita no encontrada') {
+                    return response_helper_1.default.notFound(res, error.message);
+                }
+                if (error.message === 'Esta cita no requiere validación de previsión') {
+                    return response_helper_1.default.badRequest(res, error.message);
+                }
+                if (error.message === 'La previsión de esta cita ya fue validada anteriormente') {
+                    return response_helper_1.default.badRequest(res, error.message);
+                }
+                return response_helper_1.default.serverError(res, 'Error al validar la previsión', error);
+            }
+        });
     }
     static get instance() {
         return this._instance || (this._instance = new Cita());

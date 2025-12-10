@@ -81,6 +81,18 @@ class MedicoService {
     }
 
     /**
+     * Obtiene un médico por su RUT (retorna la instancia del modelo de Sequelize)
+     * Usar este método cuando se necesite ejecutar métodos de Sequelize como .update()
+     */
+    async getMedicoModelById(rut: string) {
+        const medico = await medicoRepository.findById(rut);
+        if (!medico) {
+            throw new Error('Médico no encontrado');
+        }
+        return medico; // Retorna la instancia del modelo, no JSON
+    }
+
+    /**
      * Crea un nuevo médico con validaciones
      */
     async createMedico(medicoData: any) {
@@ -204,6 +216,33 @@ class MedicoService {
 
         // Actualizar contraseña
         return medicoRepository.update(medico, { password: hashedPassword } as any);
+    }
+
+    /**
+     * Actualiza la imagen de perfil de un médico (S3 key)
+     * @param rut - RUT del médico
+     * @param s3Key - Key de S3 de la imagen (null o undefined para eliminar)
+     */
+    async updateMedicoImage(rut: string, s3Key: string | null | undefined) {
+        const medico = await medicoRepository.findById(rut);
+        if (!medico) {
+            throw new Error('Médico no encontrado');
+        }
+
+        const medicoActualizado = await medicoRepository.updateByRut(rut, {
+            imagen_s3_key: s3Key === null ? undefined : s3Key
+        });
+
+        if (!medicoActualizado) {
+            throw new Error('Error al actualizar imagen del médico');
+        }
+
+        // Procesar para asignar el rol como string
+        const medicoJSON = medicoActualizado.toJSON();
+        if (medicoJSON.rol && medicoJSON.rol.codigo) {
+            medicoJSON.rol = medicoJSON.rol.codigo;
+        }
+        return medicoJSON;
     }
 }
 

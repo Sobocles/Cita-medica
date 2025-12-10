@@ -1,17 +1,415 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">
+      <i class="bi bi-speedometer2"></i>
+      Panel de Control del Sistema
+    </h1>
+    <button class="btn btn-outline-primary btn-sm" (click)="toggleInstrucciones()">
+      <i class="bi" [ngClass]="mostrarInstrucciones ? 'bi-eye-slash' : 'bi-eye'"></i>
+      {{ mostrarInstrucciones ? 'Ocultar' : 'Ver' }} Instrucciones
+    </button>
+  </div>
 
-<div class="container">
-    <h1 class="title">Bienvenido al Sistema de Gestión de Citas Médicas</h1>
-    <p class="introduction">
-        A continuación, encontrará instrucciones detalladas para facilitar la gestión de su clínica. Por favor, siga estos pasos en el orden presentado para una experiencia eficiente.
-    </p>
-    <ol class="instruction-list">
-        <li><strong>Registro de Pacientes:</strong> Registre a los pacientes en la sección "Gestionar Pacientes". Utilice el botón "Crear Usuarios" para completar el formulario, tenga en cuenta que los pacientes se pueden registrar en la aplicacio en el formulario de registro de paciente en la patalla de registro o registrarlos por su cuenta.</li>
-        <li><strong>Creación de Tipos de Citas Médicas:</strong> Defina tipos de citas médicas (ej: cardiología, psicología), asignando duración y precio en la sección correspondiente.</li>
-        <li><strong>Registro de Médicos:</strong> Un vez tenga tipos citas y especialidades medicas registradas, Registre a los médicos en "Gestionar Médicos". Haga clic en "Crear Médicos" y complete el formulario correspondiente, asignandole una especialidad medica a su medico.</li>   
-        <li><strong>Creación de Horarios para Médicos:</strong> Una vez que les asigne especialidades medicas a lo medicos registrados en la aplicacion, puede crear horarios para estos medicos  en "Gestionar Horarios Médicos", seleccionando "Crear Horario Médico" y completando el formulario, asegurese de contar con los recursos suficientes  y disponer de salas disponibles para cada cita medica antes de registrar horarios a sus medicos.</li>    
-        <li><strong>Programación de Citas Médicas:</strong> Programe citas médicas para los pacientes. Pueden ser compradas por los usuarios de la aplicación o registradas por usted mismo, en en el modulo de gestionar citas, tenga en cuenta que para agendar citas medicas debe tener pacientes registrados en la aplicacion, especialidades medicas registradas, especialistas medicos que puedan atender pacientes que requieran de dichas especialidades y haber definido los horarios  medicos en el aparatado de gestionar horarios como se explico anteriormente, todo esto con el fin de que el sistema tenga la informacion suficiente para poder buscar bloques de horarios disponibles en funcion de su especialidad medica y de la fecha seleccionada. </li>
-        <li><strong>Importancia cambiar estados de citas medicas:</strong>En los sistemas de citas medicas existen 4 estados, pagado que es cuando un paciente pago una cita, no_pagado que es cuando un paciente fallo en la en la transaccion de compra de una cita, en_curso que es cuando la cita es registrada por el administrador y pagada en efectivo en la misma clinica, terminado cuando el paciente finaliza su cita medica, y no asistio que es cuando el paciente no asiste a su cita .</li>
-        <li><strong>¿Como gestionar los estados?:</strong>Si el paciente esta en un estado en_curso o pagado el paciente no podra agendar otra cita medica hasta que su estado haya cambiado a terminado, es por este motivo que es de SUMA IMPORTANCIA cambiar el estado de un paciente  una vez que termine su cita para poder agendar otra, esto para tambien es importante para los historiales medicos, ya que los medicos solo podran redactar historiales para paciente que tenga una cita en_curso, pagada, o terminada  .</li>
-    </ol>
+  <!-- Loader -->
+  <div *ngIf="loading" class="loading-spinner">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+    <p class="mt-3">Cargando estado del sistema...</p>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!loading && systemStatus" class="dashboard-content">
+
+    <!-- Estado General -->
+    <div class="status-card mb-4" [ngClass]="systemStatus.listo ? 'status-ready' : 'status-not-ready'">
+      <div class="status-card-header">
+        <i class="bi" [ngClass]="systemStatus.listo ? 'bi-check-circle-fill' : 'bi-exclamation-circle-fill'"></i>
+        <h2>{{ systemStatus.mensajeListo }}</h2>
+      </div>
+      <div class="status-card-body">
+        <p *ngIf="systemStatus.listo" class="text-success">
+          Todos los pre-requisitos están completos. Puede crear citas médicas sin problemas.
+        </p>
+        <div *ngIf="!systemStatus.listo" class="requisitos-faltantes">
+          <p class="text-warning mb-2">Faltan los siguientes requisitos:</p>
+          <ul>
+            <li *ngIf="systemStatus.tiposCita.total === 0">
+              Registrar especialidades médicas (Tipos de Cita)
+            </li>
+            <li *ngIf="systemStatus.medicos.total === 0">
+              Registrar médicos
+            </li>
+            <li *ngIf="systemStatus.horarios.total === 0">
+              Configurar horarios para los médicos
+            </li>
+            <li *ngIf="systemStatus.pacientes.total === 0">
+              Registrar pacientes
+            </li>
+          </ul>
+        </div>
+        <button *ngIf="systemStatus.listo" class="btn btn-success btn-lg mt-3" (click)="navegar('/ad/agregar-cita')">
+          <i class="bi bi-calendar-plus"></i>
+          Crear Cita Médica
+        </button>
+      </div>
+    </div>
+
+    <!-- Alertas -->
+    <div *ngIf="systemStatus.alertas.length > 0" class="alertas-section mb-4">
+      <h3 class="section-title">
+        <i class="bi bi-bell-fill"></i>
+        Alertas del Sistema
+        <span class="badge bg-danger ms-2" *ngIf="contarAlertas('error') > 0">
+          {{ contarAlertas('error') }} Crítica(s)
+        </span>
+        <span class="badge bg-warning ms-2" *ngIf="contarAlertas('warning') > 0">
+          {{ contarAlertas('warning') }} Advertencia(s)
+        </span>
+      </h3>
+
+      <div class="alerts-container">
+        <div *ngFor="let alerta of systemStatus.alertas"
+             class="alert"
+             [ngClass]="getAlertClass(alerta.tipo)"
+             role="alert">
+          <div class="alert-content">
+            <div class="alert-icon">
+              <i class="bi" [ngClass]="getAlertIcon(alerta.tipo)"></i>
+            </div>
+            <div class="alert-message">
+              {{ alerta.mensaje }}
+            </div>
+            <button *ngIf="alerta.accion"
+                    class="btn btn-sm"
+                    [ngClass]="alerta.tipo === 'error' ? 'btn-danger' : alerta.tipo === 'warning' ? 'btn-warning' : 'btn-info'"
+                    (click)="navegar(alerta.accion.ruta)">
+              {{ alerta.accion.texto }}
+              <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estadísticas en Cards -->
+    <div class="row g-4 mb-4">
+      <!-- Tipos de Cita -->
+      <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-card-header bg-primary">
+            <i class="bi bi-clipboard2-pulse"></i>
+            <span>Especialidades</span>
+          </div>
+          <div class="stat-card-body">
+            <div class="stat-number">{{ systemStatus.tiposCita.total }}</div>
+            <div class="stat-label">Registradas</div>
+            <div *ngIf="systemStatus.tiposCita.sinMedicos.length > 0" class="stat-detail text-warning">
+              <i class="bi bi-exclamation-triangle"></i>
+              {{ systemStatus.tiposCita.sinMedicos.length }} sin médicos
+            </div>
+          </div>
+          <div class="stat-card-footer">
+            <button class="btn btn-sm btn-outline-primary" (click)="navegar('/ad/gestionar-tipo-cita')">
+              Ver detalles
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Médicos -->
+      <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-card-header bg-success">
+            <i class="bi bi-person-badge"></i>
+            <span>Médicos</span>
+          </div>
+          <div class="stat-card-body">
+            <div class="stat-number">{{ systemStatus.medicos.total }}</div>
+            <div class="stat-label">Registrados</div>
+            <div class="progress mt-2" style="height: 8px;">
+              <div class="progress-bar"
+                   [ngClass]="getProgressBarClass()"
+                   role="progressbar"
+                   [style.width.%]="getPorcentajeMedicosConHorario()">
+              </div>
+            </div>
+            <div class="stat-detail mt-2">
+              <small>
+                <i class="bi bi-clock"></i>
+                {{ systemStatus.medicos.conHorario }} con horario
+                <span *ngIf="systemStatus.medicos.sinHorario > 0" class="text-warning">
+                  ({{ systemStatus.medicos.sinHorario }} sin horario)
+                </span>
+              </small>
+            </div>
+          </div>
+          <div class="stat-card-footer">
+            <button class="btn btn-sm btn-outline-success" (click)="navegar('/ad/gestionar-medicos')">
+              Ver detalles
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Horarios -->
+      <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-card-header bg-info">
+            <i class="bi bi-calendar-week"></i>
+            <span>Horarios</span>
+          </div>
+          <div class="stat-card-body">
+            <div class="stat-number">{{ systemStatus.horarios.total }}</div>
+            <div class="stat-label">Configurados</div>
+            <div class="stat-detail">
+              <small>
+                Cobertura semanal activa
+              </small>
+            </div>
+          </div>
+          <div class="stat-card-footer">
+            <button class="btn btn-sm btn-outline-info" (click)="navegar('/ad/gestionar-horarios-medicos')">
+              Ver detalles
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pacientes -->
+      <div class="col-md-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-card-header bg-warning">
+            <i class="bi bi-people"></i>
+            <span>Pacientes</span>
+          </div>
+          <div class="stat-card-body">
+            <div class="stat-number">{{ systemStatus.pacientes.total }}</div>
+            <div class="stat-label">Registrados</div>
+            <div class="stat-detail">
+              <small>
+                <i class="bi bi-check-circle"></i>
+                {{ systemStatus.pacientes.activos }} activos
+              </small>
+            </div>
+          </div>
+          <div class="stat-card-footer">
+            <button class="btn btn-sm btn-outline-warning" (click)="navegar('/ad/gestionar-pacientes')">
+              Ver detalles
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estadísticas de Citas -->
+    <div class="citas-stats mb-4">
+      <h3 class="section-title">
+        <i class="bi bi-calendar-check"></i>
+        Estado de Citas Médicas
+      </h3>
+
+      <div class="row g-3">
+        <div class="col-md-3">
+          <div class="mini-stat-card">
+            <div class="mini-stat-icon bg-secondary">
+              <i class="bi bi-calendar3"></i>
+            </div>
+            <div class="mini-stat-content">
+              <div class="mini-stat-number">{{ systemStatus.citas.total }}</div>
+              <div class="mini-stat-label">Total Citas</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="mini-stat-card">
+            <div class="mini-stat-icon bg-primary">
+              <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="mini-stat-content">
+              <div class="mini-stat-number">{{ systemStatus.citas.enCurso }}</div>
+              <div class="mini-stat-label">En Curso</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="mini-stat-card">
+            <div class="mini-stat-icon bg-success">
+              <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="mini-stat-content">
+              <div class="mini-stat-number">{{ systemStatus.citas.pagadas }}</div>
+              <div class="mini-stat-label">Pagadas</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <div class="mini-stat-card">
+            <div class="mini-stat-icon bg-info">
+              <i class="bi bi-clipboard-check"></i>
+            </div>
+            <div class="mini-stat-content">
+              <div class="mini-stat-number">{{ systemStatus.citas.terminadas }}</div>
+              <div class="mini-stat-label">Terminadas</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Citas Pendientes de Cerrar -->
+      <div *ngIf="systemStatus.citas.pendientesCerrar.length > 0" class="alert alert-warning mt-3">
+        <h5 class="alert-heading">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          Citas Pendientes de Cerrar ({{ systemStatus.citas.pendientesCerrar.length }})
+        </h5>
+        <p class="mb-2">Las siguientes citas tienen más de 24 horas y aún no han sido cerradas:</p>
+        <ul class="mb-0">
+          <li *ngFor="let cita of systemStatus.citas.pendientesCerrar.slice(0, 5)">
+            <strong>Cita #{{ cita.idCita }}</strong> - {{ cita.paciente }} con {{ cita.medico }}
+            <span class="badge bg-warning text-dark ms-2">{{ cita.horasTranscurridas }}h transcurridas</span>
+          </li>
+          <li *ngIf="systemStatus.citas.pendientesCerrar.length > 5" class="text-muted">
+            ... y {{ systemStatus.citas.pendientesCerrar.length - 5 }} más
+          </li>
+        </ul>
+        <button class="btn btn-warning btn-sm mt-2" (click)="navegar('/ad/gestionar-cita')">
+          <i class="bi bi-list-check"></i>
+          Gestionar Citas
+        </button>
+      </div>
+    </div>
+
+    <!-- Médicos sin Horario -->
+    <div *ngIf="systemStatus.medicos.medicosSinHorario.length > 0" class="medicos-sin-horario mb-4">
+      <h3 class="section-title">
+        <i class="bi bi-exclamation-triangle"></i>
+        Médicos sin Horario Asignado ({{ systemStatus.medicos.medicosSinHorario.length }})
+      </h3>
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th>RUT</th>
+              <th>Nombre</th>
+              <th>Especialidad</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let medico of systemStatus.medicos.medicosSinHorario.slice(0, 5)">
+              <td>{{ medico.rut }}</td>
+              <td>{{ medico.nombre }} {{ medico.apellidos }}</td>
+              <td>
+                <span class="badge bg-secondary">{{ medico.especialidad_medica }}</span>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-primary" (click)="navegar('/ad/agregar-horario-medico')">
+                  <i class="bi bi-calendar-plus"></i>
+                  Crear Horario
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p *ngIf="systemStatus.medicos.medicosSinHorario.length > 5" class="text-muted text-center">
+          ... y {{ systemStatus.medicos.medicosSinHorario.length - 5 }} médico(s) más
+        </p>
+      </div>
+    </div>
+
+    <!-- Distribución de Médicos por Especialidad -->
+    <div *ngIf="systemStatus.medicos.porEspecialidad.length > 0" class="especialidades-stats mb-4">
+      <h3 class="section-title">
+        <i class="bi bi-diagram-3"></i>
+        Distribución de Médicos por Especialidad
+      </h3>
+      <div class="row g-3">
+        <div class="col-md-4" *ngFor="let esp of systemStatus.medicos.porEspecialidad">
+          <div class="especialidad-card">
+            <div class="especialidad-nombre">{{ esp.especialidad }}</div>
+            <div class="especialidad-cantidad">
+              <span class="badge bg-primary">{{ esp.cantidad }}</span>
+              {{ esp.cantidad === 1 ? 'médico' : 'médicos' }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accesos Rápidos -->
+    <div class="quick-actions mb-4">
+      <h3 class="section-title">
+        <i class="bi bi-lightning-fill"></i>
+        Accesos Rápidos
+      </h3>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <button class="quick-action-btn btn btn-outline-primary w-100" (click)="navegar('/ad/agregar-cita')">
+            <i class="bi bi-calendar-plus"></i>
+            <span>Crear Cita</span>
+          </button>
+        </div>
+        <div class="col-md-3">
+          <button class="quick-action-btn btn btn-outline-success w-100" (click)="navegar('/ad/agregar-medico')">
+            <i class="bi bi-person-plus"></i>
+            <span>Agregar Médico</span>
+          </button>
+        </div>
+        <div class="col-md-3">
+          <button class="quick-action-btn btn btn-outline-info w-100" (click)="navegar('/ad/agregar-horario-medico')">
+            <i class="bi bi-clock"></i>
+            <span>Crear Horario</span>
+          </button>
+        </div>
+        <div class="col-md-3">
+          <button class="quick-action-btn btn btn-outline-warning w-100" (click)="navegar('/ad/gestionar-cita')">
+            <i class="bi bi-list-check"></i>
+            <span>Gestionar Citas</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Instrucciones (Colapsable) -->
+  <div *ngIf="mostrarInstrucciones" class="instrucciones-section">
+    <div class="instrucciones-card">
+      <h2 class="instrucciones-title">
+        <i class="bi bi-book"></i>
+        Guía de Uso del Sistema
+      </h2>
+      <ol class="instruction-list">
+        <li>
+          <strong>Registro de Pacientes:</strong> Registre a los pacientes en la sección "Gestionar Pacientes". Utilice el botón "Crear Usuarios" para completar el formulario. Los pacientes también pueden auto-registrarse.
+        </li>
+        <li>
+          <strong>Creación de Tipos de Citas Médicas:</strong> Defina tipos de citas médicas (ej: cardiología, psicología), asignando duración y precio en la sección correspondiente.
+        </li>
+        <li>
+          <strong>Registro de Médicos:</strong> Una vez tenga tipos citas y especialidades médicas registradas, registre a los médicos en "Gestionar Médicos". Complete el formulario asignándole una especialidad médica a su médico.
+        </li>
+        <li>
+          <strong>Creación de Horarios para Médicos:</strong> Una vez que les asigne especialidades médicas a los médicos, puede crear horarios en "Gestionar Horarios Médicos". Asegúrese de contar con los recursos suficientes y salas disponibles.
+        </li>
+        <li>
+          <strong>Programación de Citas Médicas:</strong> Programe citas médicas. El sistema buscará bloques de horarios disponibles según la especialidad y fecha seleccionada.
+        </li>
+        <li>
+          <strong>Importancia de cambiar estados de citas médicas:</strong> Los estados son: pagado, no_pagado, en_curso, terminado y no_asistio. Es CRUCIAL cambiar el estado a "terminado" cuando finaliza una cita.
+        </li>
+        <li>
+          <strong>¿Cómo gestionar los estados?:</strong> Si el paciente está en estado en_curso o pagado, no podrá agendar otra cita hasta que cambie a terminado. Los médicos solo pueden redactar historiales para citas en_curso, pagadas o terminadas.
+        </li>
+      </ol>
+      <button class="btn btn-secondary" (click)="toggleInstrucciones()">
+        <i class="bi bi-eye-slash"></i>
+        Ocultar Instrucciones
+      </button>
+    </div>
+  </div>
 </div>
-

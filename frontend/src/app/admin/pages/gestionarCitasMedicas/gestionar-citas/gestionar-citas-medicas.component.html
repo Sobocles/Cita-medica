@@ -1,14 +1,115 @@
-<!-- Sección de búsqueda -->
+<!-- Sección de búsqueda y filtros -->
 <div class="row animated fadeIn fast">
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <p>Buscar citas médicas...</p>
+                <!-- Barra de búsqueda principal -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">
+                        <i class="bi bi-search"></i>
+                        Buscar y Filtrar Citas
+                    </h6>
+                    <button class="btn btn-sm btn-outline-primary" (click)="toggleFiltros()">
+                        <i class="bi" [ngClass]="mostrarFiltros ? 'bi-funnel-fill' : 'bi-funnel'"></i>
+                        {{ mostrarFiltros ? 'Ocultar Filtros' : 'Mostrar Filtros' }}
+                    </button>
+                </div>
+
                 <input type="text"
                        class="form-control"
-                       placeholder="Buscar citas por nombre del paciente o médico..."
+                       placeholder="Buscar por paciente o médico..."
                        #txtTermino
+                       [(ngModel)]="filtros.busqueda"
                        (keyup)="buscar(txtTermino.value)"/>
+
+                <!-- Panel de filtros avanzados (colapsable) -->
+                <div *ngIf="mostrarFiltros" class="filtros-panel mt-3" [@slideDown]>
+                    <div class="row g-3">
+                        <!-- Filtro por Estado -->
+                        <div class="col-md-3">
+                            <label for="filtroEstado" class="form-label">
+                                <i class="bi bi-tag"></i> Estado
+                            </label>
+                            <select
+                                id="filtroEstado"
+                                class="form-select"
+                                [(ngModel)]="filtros.estado"
+                                (change)="aplicarFiltros()">
+                                <option value="">Todos los estados</option>
+                                <option *ngFor="let estado of estadosDisponibles" [value]="estado">
+                                    {{ getNombreEstado(estado) }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Filtro por Especialidad -->
+                        <div class="col-md-3">
+                            <label for="filtroEspecialidad" class="form-label">
+                                <i class="bi bi-hospital"></i> Especialidad
+                            </label>
+                            <select
+                                id="filtroEspecialidad"
+                                class="form-select"
+                                [(ngModel)]="filtros.especialidad"
+                                (change)="aplicarFiltros()">
+                                <option value="">Todas las especialidades</option>
+                                <option *ngFor="let esp of especialidadesDisponibles" [value]="esp">
+                                    {{ esp }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Filtro por Fecha Desde -->
+                        <div class="col-md-3">
+                            <label for="filtroFechaDesde" class="form-label">
+                                <i class="bi bi-calendar"></i> Desde
+                            </label>
+                            <input
+                                type="date"
+                                id="filtroFechaDesde"
+                                class="form-control"
+                                [(ngModel)]="filtros.fechaDesde"
+                                (change)="aplicarFiltros()"/>
+                        </div>
+
+                        <!-- Filtro por Fecha Hasta -->
+                        <div class="col-md-3">
+                            <label for="filtroFechaHasta" class="form-label">
+                                <i class="bi bi-calendar-check"></i> Hasta
+                            </label>
+                            <input
+                                type="date"
+                                id="filtroFechaHasta"
+                                class="form-control"
+                                [(ngModel)]="filtros.fechaHasta"
+                                (change)="aplicarFiltros()"/>
+                        </div>
+                    </div>
+
+                    <!-- Botón limpiar filtros -->
+                    <div class="d-flex justify-content-end mt-3">
+                        <button
+                            class="btn btn-sm btn-outline-secondary"
+                            (click)="limpiarFiltros()"
+                            [disabled]="getFiltrosActivos().length === 0">
+                            <i class="bi bi-x-circle"></i>
+                            Limpiar Filtros
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chips de filtros activos -->
+                <div *ngIf="getFiltrosActivos().length > 0" class="filtros-activos mt-3">
+                    <small class="text-muted me-2">
+                        <i class="bi bi-filter"></i> Filtros activos:
+                    </small>
+                    <span
+                        *ngFor="let filtro of getFiltrosActivos()"
+                        class="badge bg-primary me-2 filtro-chip">
+                        <strong>{{ filtro.label }}:</strong> {{ filtro.valor }}
+                        <i class="bi bi-x-circle ms-1 cursor-pointer" (click)="eliminarFiltro(filtro.key)"></i>
+                    </span>
+                </div>
             </div>
         </div>
     </div>
@@ -41,15 +142,30 @@
                 <h6 class="card-subtitle">Citas registradas en mi aplicación</h6>
                 
                 <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead>
+                    <table class="table table-bordered table-hover">
+                        <thead class="table-light">
                             <tr>
-                                <th style="width: 8%;">ID</th>
-                                <th style="width: 12%;">Fecha</th>
-                                <th style="width: 20%;">Paciente</th>
-                                <th style="width: 20%;">Médico</th>
+                                <th style="width: 8%;" class="sortable" (click)="ordenarPor('idCita')">
+                                    ID
+                                    <i class="bi ms-1" [ngClass]="getIconoOrden('idCita')"></i>
+                                </th>
+                                <th style="width: 12%;" class="sortable" (click)="ordenarPor('fecha')">
+                                    Fecha
+                                    <i class="bi ms-1" [ngClass]="getIconoOrden('fecha')"></i>
+                                </th>
+                                <th style="width: 20%;" class="sortable" (click)="ordenarPor('paciente')">
+                                    Paciente
+                                    <i class="bi ms-1" [ngClass]="getIconoOrden('paciente')"></i>
+                                </th>
+                                <th style="width: 20%;" class="sortable" (click)="ordenarPor('medico')">
+                                    Médico
+                                    <i class="bi ms-1" [ngClass]="getIconoOrden('medico')"></i>
+                                </th>
                                 <th style="width: 15%;">Tipo de cita</th>
-                                <th style="width: 10%;">Estado</th>
+                                <th style="width: 10%;" class="sortable" (click)="ordenarPor('estado')">
+                                    Estado
+                                    <i class="bi ms-1" [ngClass]="getIconoOrden('estado')"></i>
+                                </th>
                                 <th style="width: 10%;">Hora inicio</th>
                                 <th style="width: 10%;">Hora fin</th>
                                 <th style="width: 5%;">Acciones</th>

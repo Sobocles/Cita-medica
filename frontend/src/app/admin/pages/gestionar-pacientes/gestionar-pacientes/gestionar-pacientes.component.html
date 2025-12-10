@@ -1,19 +1,88 @@
-<!-- Sección de búsqueda -->
+<!-- Sección de búsqueda y filtros -->
 <div class="row animated fadeIn fast">
   <div class="col-12">
     <div class="card">
       <div class="card-body">
-        <label for="searchPatient" class="form-label">Buscar pacientes...</label>
-        <div class="input-group">
-          <span class="input-group-text">
-            <i class="fa fa-search"></i>
+        <!-- Barra de búsqueda principal -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h6 class="mb-0">
+            <i class="bi bi-search"></i>
+            Buscar y Filtrar Pacientes
+          </h6>
+          <button class="btn btn-sm btn-outline-primary" (click)="toggleFiltros()">
+            <i class="bi" [ngClass]="mostrarFiltros ? 'bi-funnel-fill' : 'bi-funnel'"></i>
+            {{ mostrarFiltros ? 'Ocultar Filtros' : 'Mostrar Filtros' }}
+          </button>
+        </div>
+
+        <input type="text"
+               class="form-control"
+               placeholder="Buscar por nombre, apellidos, RUT o email..."
+               #txtTermino
+               [(ngModel)]="filtros.busqueda"
+               (keyup)="buscar(txtTermino.value)"/>
+
+        <!-- Panel de filtros avanzados (colapsable) -->
+        <div *ngIf="mostrarFiltros" class="filtros-panel mt-3" [@slideDown]>
+          <div class="row g-3">
+            <!-- Filtro por Rol -->
+            <div class="col-md-6">
+              <label for="filtroRol" class="form-label">
+                <i class="bi bi-person-badge"></i> Rol
+              </label>
+              <select
+                id="filtroRol"
+                class="form-select"
+                [(ngModel)]="filtros.rol"
+                (change)="aplicarFiltros()">
+                <option value="">Todos los roles</option>
+                <option *ngFor="let rol of rolesDisponibles" [value]="rol">
+                  {{ getNombreRol(rol) }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Filtro por Rango de Edad -->
+            <div class="col-md-6">
+              <label for="filtroEdad" class="form-label">
+                <i class="bi bi-calendar-range"></i> Rango de Edad
+              </label>
+              <select
+                id="filtroEdad"
+                class="form-select"
+                [(ngModel)]="filtros.rangoEdad"
+                (change)="aplicarFiltros()">
+                <option value="">Todas las edades</option>
+                <option *ngFor="let rango of rangosEdad" [value]="rango.valor">
+                  {{ rango.nombre }}
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Botón limpiar filtros -->
+          <div class="d-flex justify-content-end mt-3">
+            <button
+              class="btn btn-sm btn-outline-secondary"
+              (click)="limpiarFiltros()"
+              [disabled]="getFiltrosActivos().length === 0">
+              <i class="bi bi-x-circle"></i>
+              Limpiar Filtros
+            </button>
+          </div>
+        </div>
+
+        <!-- Chips de filtros activos -->
+        <div *ngIf="getFiltrosActivos().length > 0" class="filtros-activos mt-3">
+          <small class="text-muted me-2">
+            <i class="bi bi-filter"></i> Filtros activos:
+          </small>
+          <span
+            *ngFor="let filtro of getFiltrosActivos()"
+            class="badge bg-primary me-2 filtro-chip">
+            <strong>{{ filtro.label }}:</strong> {{ filtro.valor }}
+            <i class="bi bi-x-circle ms-1 cursor-pointer" (click)="eliminarFiltro(filtro.key)"></i>
           </span>
-          <input type="text"
-                 id="searchPatient"
-                 class="form-control"
-                 placeholder="Buscar pacientes por nombre..."
-                 #txtTermino
-                 (keyup)="buscar(txtTermino.value)"/>
         </div>
       </div>
     </div>
@@ -42,15 +111,35 @@
       
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table table-bordered">
+          <table class="table table-bordered table-hover">
             <thead>
               <tr>
-                <th style="width: 15%;">RUT</th>
-                <th style="width: 15%;">Nombre</th>
-                <th style="width: 15%;">Apellidos</th>
-                <th style="width: 20%;">Email</th>
-                <th style="width: 15%;">Teléfono</th>
-                <th style="width: 10%;">Rol</th>
+                <th style="width: 10%;" class="sortable" (click)="ordenarPor('rut')">
+                  RUT
+                  <i class="bi ms-1" [ngClass]="getIconoOrden('rut')"></i>
+                </th>
+                <th style="width: 12%;" class="sortable" (click)="ordenarPor('nombre')">
+                  Nombre
+                  <i class="bi ms-1" [ngClass]="getIconoOrden('nombre')"></i>
+                </th>
+                <th style="width: 12%;" class="sortable" (click)="ordenarPor('apellidos')">
+                  Apellidos
+                  <i class="bi ms-1" [ngClass]="getIconoOrden('apellidos')"></i>
+                </th>
+                <th style="width: 15%;" class="sortable" (click)="ordenarPor('email')">
+                  Email
+                  <i class="bi ms-1" [ngClass]="getIconoOrden('email')"></i>
+                </th>
+                <th style="width: 8%;">Teléfono</th>
+                <th style="width: 6%;" class="sortable" (click)="ordenarPor('edad')">
+                  Edad
+                  <i class="bi ms-1" [ngClass]="getIconoOrden('edad')"></i>
+                </th>
+                <th style="width: 12%;">Previsión</th>
+                <th style="width: 10%;" class="sortable" (click)="ordenarPor('rol')">
+                  Rol
+                  <i class="bi ms-1" [ngClass]="getIconoOrden('rol')"></i>
+                </th>
                 <th style="width: 10%;" class="text-center">Acciones</th>
               </tr>
             </thead>
@@ -62,7 +151,21 @@
                 <td>{{paciente.email}}</td>
                 <td>{{paciente.telefono}}</td>
                 <td>
+                  <span class="badge bg-info">
+                    {{ calcularEdad(paciente.fecha_nacimiento) }} años
+                  </span>
+                </td>
+                <td>
+                  <div class="prevision-info">
+                    <span class="badge" [ngClass]="getBadgeClass(paciente.tipo_prevision)">
+                      <i class="bi me-1" [ngClass]="getIconoPrevision(paciente.tipo_prevision)"></i>
+                      {{ formatearPrevision(paciente) }}
+                    </span>
+                  </div>
+                </td>
+                <td>
                   <select class="form-select form-select-sm"
+                          [name]="'rol-' + paciente.rut"
                           [(ngModel)]="paciente.rol"
                           (change)="cambiarRole(paciente)">
                     <option value="ADMIN_ROLE">Administrador</option>
@@ -71,7 +174,7 @@
                 </td>
                 <td class="text-center">
                   <div class="btn-group">
-                    <button type="button" 
+                    <button type="button"
                             class="btn btn-outline-primary btn-sm"
                             data-toggle="tooltip"
                             title="Editar"
@@ -89,7 +192,7 @@
                 </td>
               </tr>
               <tr *ngIf="pacientes.length === 0">
-                <td colspan="7" class="text-center py-4">
+                <td colspan="9" class="text-center py-4">
                   <div class="text-muted">
                     <i class="fa fa-info-circle"></i>
                     No se encontraron pacientes

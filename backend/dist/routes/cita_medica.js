@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const cita_medica_1 = __importDefault(require("../controllers/cita_medica"));
 const validar_campos_1 = __importDefault(require("../middlewares/validar-campos"));
+const validar_jwt_1 = __importDefault(require("../middlewares/validar-jwt"));
 const cita_validators_1 = require("../middlewares/validators/cita.validators");
 const router = (0, express_1.Router)();
 // Obtener todas las citas con paginación
@@ -48,5 +49,10 @@ router.delete('/:id', [
     ...cita_validators_1.deleteCitaValidators,
     validar_campos_1.default.instance.validarCampos
 ], cita_medica_1.default.instance.deleteCita);
+// Validar previsión presencialmente (para recepcionista/admin)
+router.post('/validar-prevision/:idCita', [
+    validar_jwt_1.default.instance.validarJwt,
+    validar_campos_1.default.instance.validarCampos
+], cita_medica_1.default.instance.validarPrevision);
 exports.default = router;
 //# sourceMappingURL=cita_medica.js.map

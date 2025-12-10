@@ -147,8 +147,8 @@ export class AuthService {
         console.log('⭐ Tipo de dato de rol:', typeof rolUsuario);
         
         // Obtener datos del usuario
-        const { rut, nombre, apellidos } = resp.userOrMedico;
-        console.log('⭐ Datos extraídos de userOrMedico:', { rut, nombre, apellidos });
+        const { rut, nombre, apellidos, tipo_prevision, nombre_isapre, tramo_fonasa } = resp.userOrMedico;
+        console.log('⭐ Datos extraídos de userOrMedico:', { rut, nombre, apellidos, tipo_prevision, nombre_isapre, tramo_fonasa });
         
         // Comprueba si existe información de la clínica antes de crear una instancia
         if (resp.infoClinica) {
@@ -167,9 +167,15 @@ export class AuthService {
           // Asegúrate de que usuario sea null/undefined para evitar confusiones
        
           console.log('⭐ Variable usuario limpiada:', this.usuario);
-        } else { 
+        } else {
           console.log('⭐ Creando instancia de usuario con datos:', { nombre, apellidos, rolUsuario, rut });
           this.usuario = new Usuario(nombre, apellidos, rolUsuario, rut);
+
+          // Asignar campos de previsión si existen
+          this.usuario.tipo_prevision = tipo_prevision;
+          this.usuario.nombre_isapre = nombre_isapre;
+          this.usuario.tramo_fonasa = tramo_fonasa;
+
           console.log('⭐ Usuario autenticado:', this.usuario);
           // Asegúrate de que medico sea null/undefined para evitar confusiones
 

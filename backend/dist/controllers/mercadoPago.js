@@ -15,7 +15,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.receiveWebhook = exports.createOrder = void 0;
 const mercadopago_1 = __importDefault(require("mercadopago"));
 const factura_1 = __importDefault(require("../models/factura"));
+const tipo_cita_1 = __importDefault(require("../models/tipo_cita"));
 const cita_medica_1 = __importDefault(require("../models/cita_medica"));
+const usuario_1 = __importDefault(require("../models/usuario"));
 const emails_1 = __importDefault(require("../helpers/emails"));
 const connection_1 = __importDefault(require("../db/connection"));
 const enviorenment_1 = require("../global/enviorenment");
@@ -25,6 +27,7 @@ const response_helper_1 = __importDefault(require("../helpers/response.helper"))
  * IMPORTANTE: Usa variables de entorno para todas las credenciales
  */
 const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a, _b;
     console.log("ENTRO A CREATE ORDER");
     // Configurar MercadoPago - SIN FALLBACK hardcodeado por seguridad
     try {
@@ -36,16 +39,81 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         console.error('Error al configurar MercadoPago:', error);
         return response_helper_1.default.serverError(res, 'Error de configuración del servicio de pagos', error);
     }
-    const { motivo, precio, idCita } = req.body;
+    const { motivo, idCita } = req.body;
     try {
+        // Cargar la cita con el paciente y tipo de cita para calcular el precio correcto
+        const cita = yield cita_medica_1.default.findByPk(idCita, {
+            include: [
+                {
+                    model: usuario_1.default,
+                    as: 'paciente',
+                    attributes: ['tipo_prevision', 'prevision_validada', 'tramo_fonasa', 'nombre_isapre']
+                },
+                {
+                    model: tipo_cita_1.default,
+                    as: 'tipoCita',
+                    attributes: ['precio', 'precio_fonasa', 'precio_isapre', 'precio_particular', 'tipo_cita']
+                }
+            ]
+        });
+        if (!cita) {
+            return response_helper_1.default.notFound(res, 'Cita médica no encontrada');
+        }
+        if (!cita.tipoCita) {
+            return response_helper_1.default.serverError(res, 'No se pudo obtener el tipo de cita');
+        }
+        // Calcular el precio según la previsión del paciente
+        const tipoPrevision = ((_a = cita.paciente) === null || _a === void 0 ? void 0 : _a.tipo_prevision) || 'Particular';
+        const precioOriginal = cita.tipoCita.precio_particular || cita.tipoCita.precio;
+        let precioFinal;
+        let porcentajeDescuento = 0;
+        switch (tipoPrevision) {
+            case 'Fonasa':
+                precioFinal = cita.tipoCita.precio_fonasa || cita.tipoCita.precio * 0.7;
+                porcentajeDescuento = 30;
+                console.log(`💰 Precio Fonasa aplicado: ${precioFinal} (paciente con Fonasa - 30% descuento)`);
+                break;
+            case 'Isapre':
+                precioFinal = cita.tipoCita.precio_isapre || cita.tipoCita.precio * 0.84;
+                porcentajeDescuento = 16;
+                console.log(`💰 Precio Isapre aplicado: ${precioFinal} (paciente con Isapre - 16% descuento)`);
+                break;
+            case 'Particular':
+            default:
+                precioFinal = precioOriginal;
+                porcentajeDescuento = 0;
+                console.log(`💰 Precio Particular aplicado: ${precioFinal} (paciente particular)`);
+                break;
+        }
+        const descuentoAplicado = precioOriginal - precioFinal;
+        // Determinar si requiere validación:
+        // - Si es Particular: NO requiere validación
+        // - Si tiene Fonasa/Isapre pero YA validó en una cita anterior: NO requiere validación
+        // - Si tiene Fonasa/Isapre pero NUNCA ha validado: SÍ requiere validación
+        const previsionYaValidada = ((_b = cita.paciente) === null || _b === void 0 ? void 0 : _b.prevision_validada) || false;
+        const requiereValidacion = tipoPrevision !== 'Particular' && !previsionYaValidada;
+        console.log(`📋 Validación de previsión:`);
+        console.log(`   - Tipo de previsión: ${tipoPrevision}`);
+        console.log(`   - ¿Ya validó previamente?: ${previsionYaValidada ? 'SÍ' : 'NO'}`);
+        console.log(`   - ¿Requiere validación en esta cita?: ${requiereValidacion ? 'SÍ' : 'NO'}`);
+        // Guardar información de precios y previsión en la cita
+        yield cita.update({
+            precio_original: precioOriginal,
+            precio_final: precioFinal,
+            tipo_prevision_aplicada: tipoPrevision,
+            descuento_aplicado: descuentoAplicado,
+            porcentaje_descuento: porcentajeDescuento,
+            requiere_validacion_prevision: requiereValidacion,
+            prevision_validada: previsionYaValidada // Si ya validó antes, marcarla como validada automáticamente
+        });
         // URLs dinámicas basadas en variables de entorno
         const baseUrl = enviorenment_1.NGROK_URL || enviorenment_1.BACKEND_URL;
         const frontendUrl = enviorenment_1.FRONTEND_URL;
         const preference = {
             items: [
                 {
-                    title: motivo,
-                    unit_price: precio,
+                    title: motivo || cita.tipoCita.tipo_cita,
+                    unit_price: precioFinal,
                     currency_id: 'CLP',
                     quantity: 1,
                 }
@@ -186,7 +254,12 @@ function procesarPagoExitoso(paymentId, idCita, montoPagado) {
                         fecha: fechaFormateada,
                         hora_inicio: cita.hora_inicio,
                         medicoNombre: `${cita.medico.nombre} ${cita.medico.apellidos}`,
-                        especialidad: cita.tipoCita.especialidad_medica
+                        especialidad: cita.tipoCita.especialidad_medica,
+                        tipoPrevision: cita.tipo_prevision_aplicada || 'Particular',
+                        precioOriginal: cita.precio_original || cita.tipoCita.precio,
+                        precioFinal: cita.precio_final || montoPagado,
+                        descuentoAplicado: cita.descuento_aplicado || 0,
+                        requiereValidacion: cita.requiere_validacion_prevision || false
                     });
                 }
                 catch (emailError) {

@@ -63,4 +63,10 @@ router.delete('/:id', [
   validarCampos.instance.validarCampos
 ], CitaMedica.instance.deleteCita);
 
+// Validar previsión presencialmente (para recepcionista/admin)
+router.post('/validar-prevision/:idCita', [
+  ValidarJwt.instance.validarJwt,
+  validarCampos.instance.validarCampos
+], CitaMedica.instance.validarPrevision);
+
 export default router;

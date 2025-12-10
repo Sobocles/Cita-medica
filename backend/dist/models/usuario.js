@@ -70,6 +70,36 @@ Usuario.init({
         allowNull: false,
         defaultValue: 'activo'
     },
+    tipo_prevision: {
+        type: sequelize_1.DataTypes.ENUM('Fonasa', 'Isapre', 'Particular'),
+        allowNull: true,
+        defaultValue: 'Particular',
+        comment: 'Sistema de salud del paciente'
+    },
+    nombre_isapre: {
+        type: sequelize_1.DataTypes.STRING(100),
+        allowNull: true,
+        defaultValue: null,
+        comment: 'Nombre de la Isapre (Banmédica, Colmena, Consalud, CruzBlanca, Nueva Masvida, etc.)'
+    },
+    tramo_fonasa: {
+        type: sequelize_1.DataTypes.ENUM('A', 'B', 'C', 'D'),
+        allowNull: true,
+        defaultValue: null,
+        comment: 'Tramo de Fonasa (A, B, C o D)'
+    },
+    prevision_validada: {
+        type: sequelize_1.DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+        comment: 'Indica si el paciente ha validado su previsión presencialmente con documentos'
+    },
+    fecha_validacion_prevision: {
+        type: sequelize_1.DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+        comment: 'Fecha en que se validó la previsión presencialmente'
+    },
 }, {
     sequelize: connection_1.default,
     modelName: 'Usuario',

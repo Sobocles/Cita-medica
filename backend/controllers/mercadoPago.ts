@@ -29,9 +29,83 @@ export const createOrder = async (req: Request, res: Response) => {
     return ResponseHelper.serverError(res, 'Error de configuración del servicio de pagos', error);
   }
 
-  const { motivo, precio, idCita } = req.body;
+  const { motivo, idCita } = req.body;
 
   try {
+    // Cargar la cita con el paciente y tipo de cita para calcular el precio correcto
+    const cita = await CitaMedica.findByPk(idCita, {
+      include: [
+        {
+          model: Usuario,
+          as: 'paciente',
+          attributes: ['tipo_prevision', 'prevision_validada', 'tramo_fonasa', 'nombre_isapre']
+        },
+        {
+          model: tipo_cita,
+          as: 'tipoCita',
+          attributes: ['precio', 'precio_fonasa', 'precio_isapre', 'precio_particular', 'tipo_cita']
+        }
+      ]
+    });
+
+    if (!cita) {
+      return ResponseHelper.notFound(res, 'Cita médica no encontrada');
+    }
+
+    if (!cita.tipoCita) {
+      return ResponseHelper.serverError(res, 'No se pudo obtener el tipo de cita');
+    }
+
+    // Calcular el precio según la previsión del paciente
+    const tipoPrevision = cita.paciente?.tipo_prevision || 'Particular';
+    const precioOriginal = cita.tipoCita.precio_particular || cita.tipoCita.precio;
+    let precioFinal: number;
+    let porcentajeDescuento = 0;
+
+    switch (tipoPrevision) {
+      case 'Fonasa':
+        precioFinal = cita.tipoCita.precio_fonasa || cita.tipoCita.precio * 0.7;
+        porcentajeDescuento = 30;
+        console.log(`💰 Precio Fonasa aplicado: ${precioFinal} (paciente con Fonasa - 30% descuento)`);
+        break;
+      case 'Isapre':
+        precioFinal = cita.tipoCita.precio_isapre || cita.tipoCita.precio * 0.84;
+        porcentajeDescuento = 16;
+        console.log(`💰 Precio Isapre aplicado: ${precioFinal} (paciente con Isapre - 16% descuento)`);
+        break;
+      case 'Particular':
+      default:
+        precioFinal = precioOriginal;
+        porcentajeDescuento = 0;
+        console.log(`💰 Precio Particular aplicado: ${precioFinal} (paciente particular)`);
+        break;
+    }
+
+    const descuentoAplicado = precioOriginal - precioFinal;
+
+    // Determinar si requiere validación:
+    // - Si es Particular: NO requiere validación
+    // - Si tiene Fonasa/Isapre pero YA validó en una cita anterior: NO requiere validación
+    // - Si tiene Fonasa/Isapre pero NUNCA ha validado: SÍ requiere validación
+    const previsionYaValidada = cita.paciente?.prevision_validada || false;
+    const requiereValidacion = tipoPrevision !== 'Particular' && !previsionYaValidada;
+
+    console.log(`📋 Validación de previsión:`);
+    console.log(`   - Tipo de previsión: ${tipoPrevision}`);
+    console.log(`   - ¿Ya validó previamente?: ${previsionYaValidada ? 'SÍ' : 'NO'}`);
+    console.log(`   - ¿Requiere validación en esta cita?: ${requiereValidacion ? 'SÍ' : 'NO'}`);
+
+    // Guardar información de precios y previsión en la cita
+    await cita.update({
+      precio_original: precioOriginal,
+      precio_final: precioFinal,
+      tipo_prevision_aplicada: tipoPrevision,
+      descuento_aplicado: descuentoAplicado,
+      porcentaje_descuento: porcentajeDescuento,
+      requiere_validacion_prevision: requiereValidacion,
+      prevision_validada: previsionYaValidada // Si ya validó antes, marcarla como validada automáticamente
+    });
+
     // URLs dinámicas basadas en variables de entorno
     const baseUrl = NGROK_URL || BACKEND_URL;
     const frontendUrl = FRONTEND_URL;
@@ -39,8 +113,8 @@ export const createOrder = async (req: Request, res: Response) => {
     const preference: CreatePreferencePayload = {
       items: [
         {
-          title: motivo,
-          unit_price: precio,
+          title: motivo || cita.tipoCita.tipo_cita,
+          unit_price: precioFinal,
           currency_id: 'CLP',
           quantity: 1,
         }
@@ -192,7 +266,12 @@ async function procesarPagoExitoso(paymentId: number, idCita: number, montoPagad
           fecha: fechaFormateada,
           hora_inicio: cita.hora_inicio,
           medicoNombre: `${cita.medico.nombre} ${cita.medico.apellidos}`,
-          especialidad: cita.tipoCita.especialidad_medica
+          especialidad: cita.tipoCita.especialidad_medica,
+          tipoPrevision: cita.tipo_prevision_aplicada || 'Particular',
+          precioOriginal: cita.precio_original || cita.tipoCita.precio,
+          precioFinal: cita.precio_final || montoPagado,
+          descuentoAplicado: cita.descuento_aplicado || 0,
+          requiereValidacion: cita.requiere_validacion_prevision || false
         });
       } catch (emailError) {
         console.error('Error al enviar correo (no crítico):', emailError);

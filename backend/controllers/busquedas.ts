@@ -21,7 +21,9 @@ export const getDocumentosColeccion = async (req: Request, res: Response) => {
 
     const data = await busquedaService.buscarEnColeccion(tabla, busqueda);
 
-    return ResponseHelper.successWithCustomData(res, { citas: data });
+    // Retornar con el nombre apropiado según el tipo de búsqueda
+    const responseKey = getResponseKey(tabla);
+    return ResponseHelper.successWithCustomData(res, { [responseKey]: data });
   } catch (error: any) {
     console.error('Error en búsqueda por colección:', error);
 
@@ -32,6 +34,24 @@ export const getDocumentosColeccion = async (req: Request, res: Response) => {
     return ResponseHelper.serverError(res, 'Error al buscar en la colección', error);
   }
 };
+
+/**
+ * Obtiene el nombre de la propiedad de respuesta según el tipo de búsqueda
+ */
+function getResponseKey(tabla: string): string {
+  const keyMap: { [key: string]: string } = {
+    'usuarios': 'usuarios',
+    'medicos': 'medicos',
+    'horario_medico': 'horarios',
+    'cita_medica': 'citas',
+    'cita_medico': 'citas',
+    'tipo_cita': 'tipos',
+    'facturas': 'facturas',
+    'historiales': 'historiales'
+  };
+
+  return keyMap[tabla] || 'resultados';
+}
 
 /**
  * Busca en todas las colecciones (búsqueda global)

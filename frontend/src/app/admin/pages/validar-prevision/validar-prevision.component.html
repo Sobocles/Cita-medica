@@ -1,0 +1,119 @@
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-12">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h3 class="mb-0">
+            <i class="fas fa-id-card"></i> Validación de Previsión
+          </h3>
+          <p class="mb-0">Citas pendientes de validar documentos de previsión</p>
+        </div>
+
+        <div class="card-body">
+          <!-- Loader -->
+          <div *ngIf="cargando" class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="sr-only">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando citas pendientes...</p>
+          </div>
+
+          <!-- Sin citas pendientes -->
+          <div *ngIf="!cargando && citasPendientes.length === 0" class="alert alert-info">
+            <h4 class="alert-heading">✅ No hay citas pendientes de validación</h4>
+            <p class="mb-0">Todas las citas que requieren validación de previsión han sido procesadas.</p>
+          </div>
+
+          <!-- Tabla de citas pendientes -->
+          <div *ngIf="!cargando && citasPendientes.length > 0">
+            <div class="alert alert-warning">
+              <strong>⚠️ Atención:</strong> Hay {{ totalCitas }} cita(s) pendiente(s) de validar previsión.
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover table-bordered">
+                <thead class="thead-dark">
+                  <tr>
+                    <th>ID Cita</th>
+                    <th>Paciente</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Previsión</th>
+                    <th>Precio Pagado</th>
+                    <th>Diferencia</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let cita of citasPendientes">
+                    <td>{{ cita.idCita }}</td>
+                    <td>
+                      <strong>{{ cita.paciente.nombre }} {{ cita.paciente.apellidos }}</strong>
+                    </td>
+                    <td>{{ formatearFecha(cita.fecha) }}</td>
+                    <td>{{ cita.hora_inicio }}</td>
+                    <td>
+                      <span class="badge"
+                            [ngClass]="{
+                              'badge-success': cita.tipo_prevision_aplicada === 'Fonasa',
+                              'badge-info': cita.tipo_prevision_aplicada === 'Isapre',
+                              'badge-secondary': cita.tipo_prevision_aplicada === 'Particular'
+                            }">
+                        {{ cita.tipo_prevision_aplicada }}
+                      </span>
+                    </td>
+                    <td class="text-success">
+                      <strong>${{ cita.precio_final | number:'1.0-0' }}</strong>
+                    </td>
+                    <td class="text-danger">
+                      <strong>${{ cita.descuento_aplicado | number:'1.0-0' }}</strong>
+                      <small class="d-block text-muted">(si no presenta)</small>
+                    </td>
+                    <td>
+                      <button
+                        class="btn btn-primary btn-sm"
+                        (click)="abrirModalValidacion(cita)"
+                        title="Validar previsión">
+                        <i class="fas fa-check-circle"></i> Validar
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card informativo -->
+      <div class="card mt-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0">ℹ️ Instrucciones</h5>
+        </div>
+        <div class="card-body">
+          <h6><strong>Escenarios de Validación:</strong></h6>
+          <ol>
+            <li>
+              <strong>✓ Validó correctamente:</strong> El paciente presentó sus documentos (Carnet Fonasa/Isapre + CI).
+              <ul>
+                <li>Se marca como validado y puede atenderse normalmente.</li>
+              </ul>
+            </li>
+            <li>
+              <strong>💵 Pagó en efectivo:</strong> No trajo documentos pero pagó la diferencia.
+              <ul>
+                <li>Se registra el monto pagado y se puede atender.</li>
+              </ul>
+            </li>
+            <li>
+              <strong>⚠️ Mintió sobre previsión:</strong> Declaró una previsión pero tiene otra.
+              <ul>
+                <li>Se actualiza su previsión real en el sistema para futuras citas.</li>
+              </ul>
+            </li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
