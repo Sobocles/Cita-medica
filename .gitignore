@@ -2,6 +2,13 @@
 .claude/
 CLAUDE.md
 
+# Documentación personal y notas de desarrollo
+REFACTORIZACION_*.md
+SOLUCION_*.md
+DOCUMENTACION_*.md
+GUIA_*.md
+NOTAS_*.md
+
 # Environment variables
 .env
 backend/.env
