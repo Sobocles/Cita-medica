@@ -57,14 +57,28 @@ class Server {
     }
 
     middlewares() {
-        // CORS
-        
+        // CORS - Configuración dinámica basada en el entorno
+        const allowedOrigins = process.env.NODE_ENV === 'production'
+            ? [process.env.FRONTEND_URL || 'https://your-app.vercel.app']
+            : ['http://localhost:4200', 'http://localhost:4201'];
 
         this.app.use(cors({
-            origin: '*',
+            origin: (origin, callback) => {
+                // Permitir solicitudes sin origin (como Postman) en desarrollo
+                if (!origin && process.env.NODE_ENV !== 'production') {
+                    return callback(null, true);
+                }
+
+                if (!origin || allowedOrigins.includes(origin)) {
+                    callback(null, true);
+                } else {
+                    callback(new Error('Not allowed by CORS'));
+                }
+            },
             methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-            credentials: true
-          }));
+            credentials: true,
+            optionsSuccessStatus: 200
+        }));
 
         // Lectura del body
         this.app.use(express.json());

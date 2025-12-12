@@ -1,0 +1,46 @@
+name: Deploy Backend to Render
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Build TypeScript
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Trigger Render deployment
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+
+      - name: Notify deployment status
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: echo "✅ Backend deployment triggered successfully on Render"
