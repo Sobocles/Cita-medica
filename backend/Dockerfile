@@ -1,27 +1,26 @@
-# Dockerfile para Backend (Node.js + Express + TypeScript) - DESARROLLO
-FROM node:18
+# Dockerfile para Backend (Node.js + Express + TypeScript) - PRODUCCIÓN
+FROM node:18-alpine
 
 # Crear directorio de trabajo
 WORKDIR /app
 
 # Copiar archivos de dependencias
 COPY package*.json ./
-COPY tsconfig.json ./
 
-# Instalar dependencias
+# Instalar TODAS las dependencias (incluyendo devDependencies para el build)
 RUN npm install
-
-# Instalar nodemon globalmente para desarrollo
-RUN npm install -g nodemon ts-node
 
 # Copiar el resto del código
 COPY . .
 
-# Crear directorio dist si no existe
-RUN mkdir -p dist
+# Compilar TypeScript a JavaScript
+RUN npm run build
+
+# Limpiar devDependencies para reducir tamaño
+RUN npm prune --production
 
 # Exponer el puerto
 EXPOSE 8000
 
-# Comando para desarrollo con tsc --watch y nodemon
-CMD ["sh", "-c", "npx tsc --watch & sleep 3 && nodemon dist/app.js"]
+# Comando para producción
+CMD ["npm", "start"]
