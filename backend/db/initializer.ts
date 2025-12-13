@@ -6,6 +6,25 @@ import bcrypt from 'bcrypt';
 import { QueryTypes } from 'sequelize';  // Añadido
 
 /**
+ * Helper para crear tipos ENUM compatibles con PostgreSQL y MySQL
+ */
+async function createEnumType(typeName: string, values: string[]) {
+  const dialect = db.getDialect();
+
+  if (dialect === 'postgres') {
+    const valuesList = values.map(v => `'${v}'`).join(', ');
+    await db.query(`
+      DO $$ BEGIN
+        CREATE TYPE ${typeName} AS ENUM(${valuesList});
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+    `);
+  }
+  // MySQL no necesita crear el tipo por separado
+}
+
+/**
  * Inicializa los datos básicos necesarios para el funcionamiento de la aplicación
  * como roles, usuario administrador por defecto, etc.
  */
@@ -168,37 +187,55 @@ async function migrateMedicosTable() {
  */
 async function migratePrevisionFields() {
   try {
-    // Verificar si la columna tipo_prevision ya existe
-    const columns = await db.query(
-      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'tipo_prevision'",
-      { type: QueryTypes.SELECT }
-    );
+    const dialect = db.getDialect();
+    const schemaQuery = dialect === 'postgres'
+      ? "SELECT column_name FROM information_schema.columns WHERE table_name = 'usuarios' AND column_name = 'tipo_prevision'"
+      : "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'tipo_prevision'";
+
+    const columns = await db.query(schemaQuery, { type: QueryTypes.SELECT });
 
     // Si la columna no existe, añadir los campos
     if (columns.length === 0) {
       console.log('🔧 Añadiendo campos de previsión de salud a la tabla usuarios...');
 
+      // Crear tipos ENUM para PostgreSQL
+      await createEnumType('tipo_prevision_enum', ['Fonasa', 'Isapre', 'Particular']);
+      await createEnumType('tramo_fonasa_enum', ['A', 'B', 'C', 'D']);
+
       // Añadir columna tipo_prevision
-      await db.query(`
-        ALTER TABLE usuarios
-        ADD COLUMN tipo_prevision ENUM('Fonasa', 'Isapre', 'Particular')
-        DEFAULT 'Particular'
-        COMMENT 'Sistema de salud del paciente'
-      `);
+      if (dialect === 'postgres') {
+        await db.query(`
+          ALTER TABLE usuarios
+          ADD COLUMN tipo_prevision tipo_prevision_enum DEFAULT 'Particular'
+        `);
+      } else {
+        await db.query(`
+          ALTER TABLE usuarios
+          ADD COLUMN tipo_prevision ENUM('Fonasa', 'Isapre', 'Particular')
+          DEFAULT 'Particular'
+          COMMENT 'Sistema de salud del paciente'
+        `);
+      }
 
       // Añadir columna nombre_isapre
       await db.query(`
         ALTER TABLE usuarios
         ADD COLUMN nombre_isapre VARCHAR(100) NULL
-        COMMENT 'Nombre de la Isapre (Banmédica, Colmena, Consalud, etc.)'
       `);
 
       // Añadir columna tramo_fonasa
-      await db.query(`
-        ALTER TABLE usuarios
-        ADD COLUMN tramo_fonasa ENUM('A', 'B', 'C', 'D') NULL
-        COMMENT 'Tramo de Fonasa (A, B, C o D)'
-      `);
+      if (dialect === 'postgres') {
+        await db.query(`
+          ALTER TABLE usuarios
+          ADD COLUMN tramo_fonasa tramo_fonasa_enum NULL
+        `);
+      } else {
+        await db.query(`
+          ALTER TABLE usuarios
+          ADD COLUMN tramo_fonasa ENUM('A', 'B', 'C', 'D') NULL
+          COMMENT 'Tramo de Fonasa (A, B, C o D)'
+        `);
+      }
 
       console.log('✅ Campos de previsión agregados correctamente');
     } else {
@@ -215,22 +252,43 @@ async function migratePrevisionFields() {
  */
 async function migrateEstadoPrevision() {
   try {
+    const dialect = db.getDialect();
+
     // Verificar si la columna estado_prevision ya existe
-    const columns = await db.query(
-      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'estado_prevision'",
-      { type: QueryTypes.SELECT }
-    );
+    const tableName = dialect === 'postgres' ? 'usuarios' : 'usuarios';
+    const schemaQuery = dialect === 'postgres'
+      ? `SELECT column_name FROM information_schema.columns WHERE table_name = '${tableName}' AND column_name = 'estado_prevision'`
+      : "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'estado_prevision'";
+
+    const columns = await db.query(schemaQuery, { type: QueryTypes.SELECT });
 
     if (columns.length === 0) {
       console.log('🔧 Añadiendo campos de estado de previsión a la tabla usuarios...');
 
-      // Añadir columna estado_prevision
-      await db.query(`
-        ALTER TABLE usuarios
-        ADD COLUMN estado_prevision ENUM('NO_VALIDADO', 'VALIDADO', 'RECHAZADO', 'NO_APLICA')
-        DEFAULT 'NO_VALIDADO'
-        COMMENT 'Estado de validación de la previsión de salud'
-      `);
+      // Añadir columna estado_prevision - PostgreSQL requiere crear el tipo ENUM primero
+      if (dialect === 'postgres') {
+        // Crear tipo ENUM en PostgreSQL
+        await db.query(`
+          DO $$ BEGIN
+            CREATE TYPE estado_prevision_enum AS ENUM('NO_VALIDADO', 'VALIDADO', 'RECHAZADO', 'NO_APLICA');
+          EXCEPTION
+            WHEN duplicate_object THEN null;
+          END $$;
+        `);
+
+        await db.query(`
+          ALTER TABLE usuarios
+          ADD COLUMN estado_prevision estado_prevision_enum DEFAULT 'NO_VALIDADO'
+        `);
+      } else {
+        // MySQL
+        await db.query(`
+          ALTER TABLE usuarios
+          ADD COLUMN estado_prevision ENUM('NO_VALIDADO', 'VALIDADO', 'RECHAZADO', 'NO_APLICA')
+          DEFAULT 'NO_VALIDADO'
+          COMMENT 'Estado de validación de la previsión de salud'
+        `);
+      }
 
       // Añadir columna fecha_validacion
       await db.query(`
@@ -369,11 +427,12 @@ async function migrateValidacionPrevisionUsuarios() {
  */
 async function migrateDescuentosCitaMedica() {
   try {
-    // Verificar si la columna precio_original ya existe
-    const columns = await db.query(
-      "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'citamedicas' AND COLUMN_NAME = 'precio_original'",
-      { type: QueryTypes.SELECT }
-    );
+    const dialect = db.getDialect();
+    const schemaQuery = dialect === 'postgres'
+      ? "SELECT column_name FROM information_schema.columns WHERE table_name = 'citamedicas' AND column_name = 'precio_original'"
+      : "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'citamedicas' AND COLUMN_NAME = 'precio_original'";
+
+    const columns = await db.query(schemaQuery, { type: QueryTypes.SELECT });
 
     if (columns.length === 0) {
       console.log('🔧 Añadiendo campos de descuentos y validación a la tabla citamedicas...');
@@ -391,11 +450,21 @@ async function migrateDescuentosCitaMedica() {
         COMMENT 'Precio final que el paciente pagó (con descuento si aplica)'
       `);
 
-      await db.query(`
-        ALTER TABLE citamedicas
-        ADD COLUMN tipo_prevision_aplicada ENUM('Fonasa', 'Isapre', 'Particular') NULL
-        COMMENT 'Tipo de previsión que se aplicó para esta cita'
-      `);
+      // Crear tipo ENUM para PostgreSQL (reutiliza el tipo ya creado)
+      await createEnumType('tipo_prevision_aplicada_enum', ['Fonasa', 'Isapre', 'Particular']);
+
+      if (dialect === 'postgres') {
+        await db.query(`
+          ALTER TABLE citamedicas
+          ADD COLUMN tipo_prevision_aplicada tipo_prevision_aplicada_enum NULL
+        `);
+      } else {
+        await db.query(`
+          ALTER TABLE citamedicas
+          ADD COLUMN tipo_prevision_aplicada ENUM('Fonasa', 'Isapre', 'Particular') NULL
+          COMMENT 'Tipo de previsión que se aplicó para esta cita'
+        `);
+      }
 
       await db.query(`
         ALTER TABLE citamedicas
