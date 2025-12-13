@@ -281,6 +281,31 @@ docker-compose down -v
 
 ---
 
+## 🌐 Despliegue en Producción
+
+La aplicación está desplegada y disponible en:
+
+- **Frontend (Vercel)**: https://cita-medica-cyan.vercel.app
+- **Backend (Render)**: https://cita-medica-hzlc.onrender.com
+- **Base de Datos**: Supabase (PostgreSQL)
+
+### Credenciales de Producción
+
+**Administrador**:
+- Email: `admin@sistema.com`
+- Password: `admin123`
+
+**⚠️ Nota importante**: El backend en Render (tier gratis) se suspende después de 15 minutos de inactividad. La primera carga puede tardar 30-60 segundos mientras el servicio se reactiva.
+
+### Documentación de Despliegue
+
+Para instrucciones detalladas sobre cómo desplegar tu propia instancia, consulta:
+- **Guía rápida (30 min)**: `QUICK_START_DEPLOYMENT.md`
+- **Guía completa**: `README_DEPLOYMENT.md`
+- **Resumen técnico**: `DEPLOYMENT_SUMMARY.md`
+
+---
+
 ## 📞 Contacto
 
 **Desarrollador**: Sebastián Morales Pincheira
