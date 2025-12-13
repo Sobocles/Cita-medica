@@ -7,14 +7,14 @@ WORKDIR /app
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar TODAS las dependencias (incluyendo devDependencies para el build)
-RUN npm install
+# Limpiar caché e instalar dependencias
+RUN npm cache clean --force && npm install
 
-# Copiar el resto del código
+# Copiar el resto del código (incluyendo tsconfig.json)
 COPY . .
 
-# Compilar TypeScript a JavaScript
-RUN npm run build
+# Limpiar dist viejo y compilar TypeScript a JavaScript
+RUN rm -rf dist && npm run build
 
 # Limpiar devDependencies para reducir tamaño
 RUN npm prune --production
