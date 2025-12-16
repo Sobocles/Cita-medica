@@ -64,7 +64,19 @@ jobs:
         working-directory: ./frontend
         run: npm ci
 
+      - name: Check if lint is configured
+        id: check-lint
+        working-directory: ./frontend
+        run: |
+          if grep -q '"lint"' angular.json; then
+            echo "lint_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "lint_available=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Lint not configured, skipping..."
+          fi
+
       - name: Lint
+        if: steps.check-lint.outputs.lint_available == 'true'
         working-directory: ./frontend
         run: npx ng lint
         continue-on-error: true
