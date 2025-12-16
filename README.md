@@ -303,11 +303,10 @@ El proyecto cuenta con pipelines automatizados de CI/CD configurados con GitHub 
 **2. Frontend CI/CD** (`.github/workflows/deploy-frontend.yml`)
 - **Trigger**: Push o PR a `main` con cambios en `frontend/`
 - **Proceso**:
-  - ✅ Linting de Angular
+  - ✅ Linting de Angular (si está configurado)
   - 🔨 Build de producción de Angular
   - ✅ Validación de artefactos de build
-  - 📦 Upload de build artifacts
-  - 🚀 Despliegue automático a Vercel (solo en push a main)
+  - 🚀 Vercel despliega automáticamente vía integración GitHub (no requiere secrets)
 
 **3. CI - Pull Request Checks** (`.github/workflows/ci.yml`)
 - **Trigger**: Pull requests a `main` o `develop`
@@ -324,9 +323,8 @@ Para que los workflows funcionen, configura estos secretos en GitHub Settings �
 - `RENDER_DEPLOY_HOOK`: URL del deploy hook de Render
 
 **Frontend (Vercel)**:
-- `VERCEL_TOKEN`: Token de acceso de Vercel
-- `VERCEL_ORG_ID`: ID de organización de Vercel
-- `VERCEL_PROJECT_ID`: ID del proyecto en Vercel
+- ℹ️ No requiere secretos - Vercel despliega automáticamente mediante su integración nativa con GitHub
+- El workflow solo valida que el build sea exitoso antes del deploy
 
 ### Estado de los Workflows
 

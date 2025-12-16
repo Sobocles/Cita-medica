@@ -66,39 +66,15 @@ jobs:
           echo "✅ Build successful"
           ls -la dist/cita-proyect/
 
-      - name: Upload build artifacts
+      - name: Build summary
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-build
-          path: frontend/dist/cita-proyect
-          retention-days: 1
-
-  deploy:
-    name: Deploy to Vercel
-    needs: test-and-build
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./frontend
-          vercel-args: '--prod'
-
-      - name: Deployment summary
         run: |
-          echo "### 🚀 Frontend Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Frontend Build Successful" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: Deployed ✅" >> $GITHUB_STEP_SUMMARY
-          echo "- **Platform**: Vercel" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: Build completed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platform**: Vercel handles automatic deployment" >> $GITHUB_STEP_SUMMARY
           echo "- **URL**: https://cita-medica-cyan.vercel.app" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "ℹ️ Vercel will automatically deploy this commit via GitHub integration" >> $GITHUB_STEP_SUMMARY
