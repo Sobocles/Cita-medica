@@ -1,4 +1,4 @@
-name: Deploy Backend to Render
+name: Backend CI/CD
 
 on:
   push:
@@ -14,7 +14,8 @@ on:
       - 'backend/**'
 
 jobs:
-  test-and-deploy:
+  test-and-build:
+    name: Test & Build Backend
     runs-on: ubuntu-latest
 
     steps:
@@ -32,15 +33,48 @@ jobs:
         working-directory: ./backend
         run: npm ci
 
+      - name: Lint TypeScript
+        working-directory: ./backend
+        run: npx tsc --noEmit
+        continue-on-error: true
+
       - name: Build TypeScript
         working-directory: ./backend
         run: npm run build
 
-      - name: Trigger Render deployment
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Check build artifacts
+        working-directory: ./backend
         run: |
-          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+          if [ ! -d "dist" ]; then
+            echo "❌ Build failed - dist directory not found"
+            exit 1
+          fi
+          echo "✅ Build successful - dist directory created"
+          ls -la dist/
 
-      - name: Notify deployment status
-        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: echo "✅ Backend deployment triggered successfully on Render"
+  deploy:
+    name: Deploy to Render
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Trigger Render deployment
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" -X POST ${{ secrets.RENDER_DEPLOY_HOOK }})
+          if [ $response -eq 200 ] || [ $response -eq 201 ]; then
+            echo "✅ Render deployment triggered successfully (HTTP $response)"
+          else
+            echo "❌ Render deployment failed (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Deployment summary
+        run: |
+          echo "### 🚀 Backend Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: Triggered ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platform**: Render" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: https://cita-medica-hzlc.onrender.com" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

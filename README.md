@@ -1,5 +1,9 @@
 # 🏥 Sistema de Gestión de Citas Médicas
 
+[![Backend CI/CD](https://github.com/Sobocles/Cita-medica/actions/workflows/deploy-backend.yml/badge.svg)](https://github.com/Sobocles/Cita-medica/actions/workflows/deploy-backend.yml)
+[![Frontend CI/CD](https://github.com/Sobocles/Cita-medica/actions/workflows/deploy-frontend.yml/badge.svg)](https://github.com/Sobocles/Cita-medica/actions/workflows/deploy-frontend.yml)
+[![CI - Pull Request Checks](https://github.com/Sobocles/Cita-medica/actions/workflows/ci.yml/badge.svg)](https://github.com/Sobocles/Cita-medica/actions/workflows/ci.yml)
+
 Plataforma web full-stack para la gestión integral de citas médicas, desarrollada con Angular 16 y Node.js/Express con TypeScript.
 
 ## 📋 Descripción
@@ -53,7 +57,8 @@ Sistema completo de gestión de citas médicas que permite:
 
    **Administrador**:
    - Email: `admin@sistema.com`
-   - Password: `admin123`
+   - Password: `
+   - admin123`
 
 ---
 
@@ -278,6 +283,54 @@ docker-compose down -v
 - Validación de datos con **express-validator**
 - Variables de entorno para credenciales sensibles
 - **.env** excluido del repositorio (usar `.env.example` como plantilla)
+
+---
+
+## 🔄 CI/CD con GitHub Actions
+
+El proyecto cuenta con pipelines automatizados de CI/CD configurados con GitHub Actions:
+
+### Workflows Implementados
+
+**1. Backend CI/CD** (`.github/workflows/deploy-backend.yml`)
+- **Trigger**: Push o PR a `main` con cambios en `backend/`
+- **Proceso**:
+  - ✅ TypeScript linting y type checking
+  - 🔨 Build de TypeScript a JavaScript
+  - ✅ Validación de artefactos de build
+  - 🚀 Despliegue automático a Render (solo en push a main)
+
+**2. Frontend CI/CD** (`.github/workflows/deploy-frontend.yml`)
+- **Trigger**: Push o PR a `main` con cambios en `frontend/`
+- **Proceso**:
+  - ✅ Linting de Angular
+  - 🔨 Build de producción de Angular
+  - ✅ Validación de artefactos de build
+  - 📦 Upload de build artifacts
+  - 🚀 Despliegue automático a Vercel (solo en push a main)
+
+**3. CI - Pull Request Checks** (`.github/workflows/ci.yml`)
+- **Trigger**: Pull requests a `main` o `develop`
+- **Proceso**:
+  - ✅ Validación de backend (si hay cambios)
+  - ✅ Validación de frontend (si hay cambios)
+  - 📊 Resumen de validaciones en el PR
+
+### Secretos Requeridos en GitHub
+
+Para que los workflows funcionen, configura estos secretos en GitHub Settings → Secrets and variables → Actions:
+
+**Backend (Render)**:
+- `RENDER_DEPLOY_HOOK`: URL del deploy hook de Render
+
+**Frontend (Vercel)**:
+- `VERCEL_TOKEN`: Token de acceso de Vercel
+- `VERCEL_ORG_ID`: ID de organización de Vercel
+- `VERCEL_PROJECT_ID`: ID del proyecto en Vercel
+
+### Estado de los Workflows
+
+Los badges en la parte superior del README muestran el estado actual de cada workflow. Puedes ver los detalles de cada ejecución en la pestaña [Actions](https://github.com/Sobocles/Cita-medica/actions) del repositorio.
 
 ---
 
