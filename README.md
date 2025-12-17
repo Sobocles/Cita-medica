@@ -6,7 +6,7 @@
 
 Plataforma web full-stack para la gestión integral de citas médicas, desarrollada con Angular 16 y Node.js/Express con TypeScript.
 
-##Demo<br>
+## Demo<br>
 https://cita-medica-cyan.verce<br>
 
 ## Demo Credentials<br>
