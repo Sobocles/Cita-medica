@@ -81,7 +81,33 @@ export class AgregarTipoCitaComponent {
     if (this.formularioTipoCita.invalid) {
       return;
     }
+
+    // Preparar datos y convertir cadenas vacías a null para campos numéricos opcionales
     const formData = { ...this.formularioTipoCita.value };
+
+    // Convertir strings vacíos a null para campos de precio opcionales
+    if (formData.precio_fonasa === '' || formData.precio_fonasa === null) {
+      formData.precio_fonasa = null;
+    } else {
+      formData.precio_fonasa = Number(formData.precio_fonasa);
+    }
+
+    if (formData.precio_isapre === '' || formData.precio_isapre === null) {
+      formData.precio_isapre = null;
+    } else {
+      formData.precio_isapre = Number(formData.precio_isapre);
+    }
+
+    if (formData.precio_particular === '' || formData.precio_particular === null) {
+      formData.precio_particular = null;
+    } else {
+      formData.precio_particular = Number(formData.precio_particular);
+    }
+
+    // Convertir precio y duración a números
+    formData.precio = Number(formData.precio);
+    formData.duracion_cita = Number(formData.duracion_cita);
+
     if (this.isEditMode) {
       // Modo edición
       this.tipoCitaService.editarTipoCita(formData).subscribe(
