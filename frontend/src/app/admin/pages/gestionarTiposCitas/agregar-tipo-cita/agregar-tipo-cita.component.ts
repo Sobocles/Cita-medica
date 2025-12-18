@@ -27,10 +27,6 @@ export class AgregarTipoCitaComponent {
       idTipo: [''], // Se usará en edición; en creación se eliminará
       especialidad_medica: ['', Validators.required],
       precio: ['', [Validators.required, Validators.pattern(/^(?!0\d)\d+$/)]],
-      // Precios diferenciados por tipo de previsión
-      precio_fonasa: ['', [Validators.pattern(/^(?!0\d)\d+$/)]],
-      precio_isapre: ['', [Validators.pattern(/^(?!0\d)\d+$/)]],
-      precio_particular: ['', [Validators.pattern(/^(?!0\d)\d+$/)]],
       duracion_cita: ['', [
         Validators.required,
         Validators.pattern(/^\d+$/),
@@ -54,9 +50,6 @@ export class AgregarTipoCitaComponent {
               idTipo: tipoCita.idTipo,
               especialidad_medica: tipoCita.especialidad_medica,
               precio: tipoCita.precio,
-              precio_fonasa: tipoCita.precio_fonasa || '',
-              precio_isapre: tipoCita.precio_isapre || '',
-              precio_particular: tipoCita.precio_particular || '',
               duracion_cita: tipoCita.duracion_cita
             });
           },
@@ -82,27 +75,8 @@ export class AgregarTipoCitaComponent {
       return;
     }
 
-    // Preparar datos y convertir cadenas vacías a null para campos numéricos opcionales
+    // Preparar datos y convertir a números
     const formData = { ...this.formularioTipoCita.value };
-
-    // Convertir strings vacíos a null para campos de precio opcionales
-    if (formData.precio_fonasa === '' || formData.precio_fonasa === null) {
-      formData.precio_fonasa = null;
-    } else {
-      formData.precio_fonasa = Number(formData.precio_fonasa);
-    }
-
-    if (formData.precio_isapre === '' || formData.precio_isapre === null) {
-      formData.precio_isapre = null;
-    } else {
-      formData.precio_isapre = Number(formData.precio_isapre);
-    }
-
-    if (formData.precio_particular === '' || formData.precio_particular === null) {
-      formData.precio_particular = null;
-    } else {
-      formData.precio_particular = Number(formData.precio_particular);
-    }
 
     // Convertir precio y duración a números
     formData.precio = Number(formData.precio);

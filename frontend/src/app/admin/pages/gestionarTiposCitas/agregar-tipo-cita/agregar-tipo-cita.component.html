@@ -23,13 +23,21 @@
         </div>
       
         <div class="form-group mb-4">
-          <label for="precio" class="form-label fw-bold">Precio Base</label>
+          <label for="precio" class="form-label fw-bold">Precio</label>
           <div class="input-group">
             <span class="input-group-text bg-light">$</span>
             <input type="text" id="precio" formControlName="precio"
                    class="form-control form-control-lg" placeholder="Ej: 50000">
           </div>
-          <small class="text-muted">Precio de referencia. Los precios diferenciados se aplican según el sistema de salud del paciente.</small>
+          <div class="alert alert-info mt-2 mb-0">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>Descuentos automáticos:</strong> El sistema aplicará descuentos automáticamente según el sistema de salud del paciente:
+            <ul class="mb-0 mt-2">
+              <li><strong>FONASA:</strong> 30% de descuento (paciente paga 70%)</li>
+              <li><strong>ISAPRE:</strong> 16% de descuento (paciente paga 84%)</li>
+              <li><strong>Particular:</strong> Sin descuento (paga 100%)</li>
+            </ul>
+          </div>
           <div *ngIf="formularioTipoCita.controls['precio'].touched">
             <div *ngIf="formularioTipoCita.controls['precio'].hasError('required')"
                  class="text-danger mt-1 small">
@@ -38,74 +46,6 @@
             <div *ngIf="formularioTipoCita.controls['precio'].hasError('pattern')"
                  class="text-danger mt-1 small">
               <i class="fas fa-exclamation-circle me-1"></i>Solo se permiten números enteros sin ceros a la izquierda
-            </div>
-          </div>
-        </div>
-
-        <!-- Sección de Precios Diferenciados -->
-        <div class="card bg-light mb-4">
-          <div class="card-header">
-            <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Precios Diferenciados por Sistema de Salud</h6>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <!-- Precio Fonasa -->
-              <div class="col-md-4 mb-3">
-                <label for="precio_fonasa" class="form-label fw-bold text-success">
-                  <i class="fas fa-heart-pulse me-1"></i>Precio Fonasa
-                </label>
-                <div class="input-group">
-                  <span class="input-group-text bg-success text-white">$</span>
-                  <input type="text" id="precio_fonasa" formControlName="precio_fonasa"
-                         class="form-control" placeholder="Opcional">
-                </div>
-                <small class="text-muted">Sugerido: 70% del precio base</small>
-                <div *ngIf="formularioTipoCita.controls['precio_fonasa'].touched &&
-                            formularioTipoCita.controls['precio_fonasa'].hasError('pattern')"
-                     class="text-danger mt-1 small">
-                  <i class="fas fa-exclamation-circle me-1"></i>Solo números enteros
-                </div>
-              </div>
-
-              <!-- Precio Isapre -->
-              <div class="col-md-4 mb-3">
-                <label for="precio_isapre" class="form-label fw-bold text-primary">
-                  <i class="fas fa-building me-1"></i>Precio Isapre
-                </label>
-                <div class="input-group">
-                  <span class="input-group-text bg-primary text-white">$</span>
-                  <input type="text" id="precio_isapre" formControlName="precio_isapre"
-                         class="form-control" placeholder="Opcional">
-                </div>
-                <small class="text-muted">Sugerido: 85% del precio base</small>
-                <div *ngIf="formularioTipoCita.controls['precio_isapre'].touched &&
-                            formularioTipoCita.controls['precio_isapre'].hasError('pattern')"
-                     class="text-danger mt-1 small">
-                  <i class="fas fa-exclamation-circle me-1"></i>Solo números enteros
-                </div>
-              </div>
-
-              <!-- Precio Particular -->
-              <div class="col-md-4 mb-3">
-                <label for="precio_particular" class="form-label fw-bold text-secondary">
-                  <i class="fas fa-user me-1"></i>Precio Particular
-                </label>
-                <div class="input-group">
-                  <span class="input-group-text bg-secondary text-white">$</span>
-                  <input type="text" id="precio_particular" formControlName="precio_particular"
-                         class="form-control" placeholder="Opcional">
-                </div>
-                <small class="text-muted">Sugerido: 100% del precio base</small>
-                <div *ngIf="formularioTipoCita.controls['precio_particular'].touched &&
-                            formularioTipoCita.controls['precio_particular'].hasError('pattern')"
-                     class="text-danger mt-1 small">
-                  <i class="fas fa-exclamation-circle me-1"></i>Solo números enteros
-                </div>
-              </div>
-            </div>
-            <div class="alert alert-info mb-0">
-              <i class="fas fa-info-circle me-2"></i>
-              <strong>Nota:</strong> Si no especifica precios diferenciados, se aplicarán automáticamente los porcentajes sugeridos sobre el precio base al momento del pago.
             </div>
           </div>
         </div>
